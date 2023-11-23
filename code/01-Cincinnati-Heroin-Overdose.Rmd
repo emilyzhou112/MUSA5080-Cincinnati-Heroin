@@ -1,42 +1,62 @@
 ---
-title: "Untitled"
-author: "Emily Zhou"
-date: "2023-11-18"
-output: html_document
+title: "Geospatial Risk Prediction for Persistent Opioid-Involved Overdose Hotspots in Cincinnati Ohio"
+author: "Emily Zhou, EChin Li"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: simplex
+    toc: yes
+    toc_float: yes
+    code_folding: hide
+    code_download: yes
+editor_options:
+  markdown:
+    wrap: sentence
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 
-- **The EMS dataset** that includes all responses to heroin-related overdose incidents from the Cincinnati Fire Department from 2015-2023. 
-https://data.cincinnati-oh.gov/Safety/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp
+Version 1.0 \| First Created Nov 17, 2023 \| Updated Dec 1, 2023
 
-- **ACS data**: adult population size, the population groups by age, the ratio of gender, and the ratio of race/ethnicity, education, income, and poverty.
+Keywords: K Nearest Neighbors, Moran’s I, Getis-Ord Gi*, Kernel Density Estimation, Random K-fold Cross Validation, Logistic Regression, Poisson Regression, ROC Curve, Principal Component Analysis, Multi-Criteria Analysis, Health Geography
 
-- **Hospital data** from Homeland Infrastructure Foundation-Level Data (HIFLD)
- https://hifld-geoplatform.opendata.arcgis.com/maps/geoplatform::hospitals/about.
+```{r library and setup}
 
-- **Substance Abuse and Mental Health Services Administration (SAMHSA) data** geocoded using google
-https://dpt2.samhsa.gov/treatment/directory.aspx
-
-- **Crime rate data** from the Cincinnati Police Department from 2016 to 2022
-https://data.cincinnati-oh.gov/safety/PDI-Police-Data-Initiative-Crime-Incidents/k59e-2pvf
-
-- **311 complaints** non-emergency service requests from 2016 to 2021
-https://data.cincinnati-oh.gov/Thriving-Neighborhoods/Cincinnati-311-Non-Emergency-Service-Requests/4cjh-bm8b
-
--**built environment data** all from OSM
-
-- **Cincinnati boundary**
-https://data-cagisportal.opendata.arcgis.com/datasets/ed78f4754b044ac5815d0a9efe9bb336_1/explore
-
-```{r heroin data}
 library(tidyverse)
+library(tidycensus)
 library(sf)
 library(lubridate)
+library(tigris)
+library(mapview)
+library(sfdep)
+library(spdep)
+library(caret)
+library(kableExtra)
+library(knitr)
 library(here)
+library(viridis)
+library(FNN)
+library(stats)
+library(factoextra)
+library(plotROC)
+library(classInt)
+library(raster)
+library(spatstat.explore)
+
+options(tigris_class = "sf")
+source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
+tidycensus::census_api_key("e79f3706b6d61249968c6ce88794f6f556e5bf3d", overwrite = TRUE)
+
+```
+
+# Data
+
+```{r heroin data, message=FALSE, warning=FALSE, results='hide'}
 
 heroin <- read.csv(here("data", "public", "Cincinnati_Fire_Incidents__CAD___including_EMS__ALS_BLS_.csv"))
 cincinnati <- st_read(here("data", "public", "Cincinnati_City_Boundary.geojson")) %>% st_transform("EPSG:3735")
@@ -45,7 +65,7 @@ heroin <- heroin %>%
   filter(CFD_INCIDENT_TYPE_GROUP != "NON-PROTOCOL PROBLEM TYPES") %>% 
   filter(is.na(LATITUDE_X) == FALSE & is.na(LONGITUDE_X) == FALSE) %>%  # remove incidents withouth spatial info
   filter(is.na(DISPOSITION_TEXT) == FALSE         # remove record with un-associated disposition codes
-         & CFD_INCIDENT_TYPE_GROUP !="CN: CANCEL" # remove records from canceled calls, false alarm, and duplicated calls
+         & CFD_INCIDENT_TYPE_GROUP !="CN: CANCEL" # remove records from canceled calls, false alarm, and duplication
          & CFD_INCIDENT_TYPE_GROUP !="CANCEL INCIDENT" 
          & CFD_INCIDENT_TYPE_GROUP !="CN: CANCEL,DEF: DEFAULT"
          & CFD_INCIDENT_TYPE_GROUP !="CN: CANCEL,EMSF: FALSE"
@@ -59,68 +79,64 @@ heroin <- heroin %>%
          year_column = year(time)) %>% 
   st_as_sf(., coords = c("LONGITUDE_X", "LATITUDE_X"), crs = 4326) %>% 
   st_transform("EPSG:3735") %>% 
-  st_intersection(cincinnati %>% select(OBJECTID),.)  # remove incidents outside of study area
+  st_intersection(cincinnati %>% select(OBJECTID),.) %>%   # remove incidents outside of study area
+  filter(year_column %in% c(2016, 2017, 2018, 2019, 2020))
 
 
 ```
 
 
-```{r}
-
-ggplot()+
-  geom_sf(data=cincinnati) +
-  geom_sf(data = heroin)
-
-```
-
-
-```{r hospital data}
+```{r medical resource data, message=FALSE, warning=FALSE}
 
 hospitals <- st_read(here("data","public", "Hospitals.geojson"))
-
 hospitals <- hospitals %>% 
   filter(STATE == "OH" & CITY == "CINCINNATI") %>% 
-  st_transform("EPSG:3735")# select those only in Cincinnati
+  st_transform("EPSG:3735") # select those only in Cincinnati
+
+
+rehab <- read.csv(here("data", "public", "rehabilitation.csv"))
+rehab <- rehab %>% 
+  filter(is.na(Latitude) == FALSE & is.na(Longitude) == FALSE) %>%
+  st_as_sf(., coords = c("Longitude", "Latitude"), crs = 4326) %>% 
+  st_transform("EPSG:3735")
 
 ```
-
 
 Specific crimes were selected for inclusion in analyses based on having been identified in the literature as a spatial risk factor for drug overdose or substance use behavior or for having a theoretical relationship with drug overdose. 
 
-```{r crime data}
+```{r crime data, message=FALSE, warning=FALSE}
 
 crime <- read.csv(here("data", "private", "PDI__Police_Data_Initiative__Crime_Incidents.csv"))
-  
 crime_list <- c("AGGRAVATED ASSAULT", "BURGLARY", "BREAKING AND ENTERING", "ROBBERY", "DOMESTIC VIOLENCE", "MURDER	", "RAPE", "THEFT")
-
 crime <- crime %>% 
   filter(OFFENSE %in% crime_list) %>% 
   filter(is.na(LATITUDE_X) == FALSE & is.na(LONGITUDE_X) == FALSE) %>%
   st_as_sf(., coords = c("LONGITUDE_X", "LATITUDE_X"), crs = 4326) %>% 
   st_transform("EPSG:3735") %>% 
   mutate(time = mdy_hms(DATE_REPORTED, tz = "UTC"),  
-         year = year(time))
+         year = year(time)) %>% 
+  filter(year %in% c(2016, 2017, 2018, 2019, 2020))
 
 ```
 
-`
-```{r 311 complaints}
+
+```{r 311 complaints data, warning=FALSE, message=FALSE}
 
 complaints <- read_csv(here("data", "private", "Cincinnati_311__Non-Emergency__Service_Requests.csv"))
-  
 complaints <- complaints %>% 
   filter(is.na(LATITUDE) == FALSE & is.na(LONGITUDE) == FALSE) %>%
   st_as_sf(., coords = c("LONGITUDE", "LATITUDE"), crs = 4326) %>% 
   st_transform("EPSG:3735") %>% 
   mutate(time = mdy_hms(REQUESTED_DATE, tz = "UTC"),  
-         year = year(time))
+         year = year(time)) %>% 
+  filter(year %in% c(2016, 2017, 2018, 2019, 2020))
 
 ```
 
+
 The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations, and highway exits) are also important. Public restrooms are associated with people who inject drugs (PWID) because many people (one study estimates 48%) use drugs in these spaces.Pharmacies represent an important access variable for several reasons. During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels.
 
-```{r built environment data}
-
+```{r built environment data, warning=FALSE, message=FALSE}
 # gas station
 fuel <- st_read(here("data", "public", "fuel.geojson")) %>% st_transform("EPSG:3735")
 
@@ -130,16 +146,12 @@ fastfood <- st_read(here("data", "public", "fastfood.geojson")) %>% st_centroid(
 # public parks
 parks <- st_read(here("data", "public", "parks.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
 
-# pharmacies
+# pharmacy
 pharmacy <- st_read(here("data","public", "pharmacy.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
-
 ```
 
 
-```{r census data}
-
-library(tidycensus)
-tidycensus::census_api_key("e79f3706b6d61249968c6ce88794f6f556e5bf3d", overwrite = TRUE)
+```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
 
 cincinnati20 <- get_acs(geography = "tract", 
           variables = c(
@@ -187,57 +199,11 @@ cincinnati20 <- cincinnati20 %>%
 
 
 ```
+# Exploratory Data Analysis
 
+# Poission Regression
 
-```{r}
-
-rehab <- read.csv(here("data", "public", "rehabilitation.csv"))
-  
-rehab <- rehab %>% 
-  filter(is.na(Latitude) == FALSE & is.na(Longitude) == FALSE) %>%
-  st_as_sf(., coords = c("Longitude", "Latitude"), crs = 4326) %>% 
-  st_transform("EPSG:3735")
-  
-
-```
-
-heroin
-
-Predictor Variables so far: 
-- hospitals
-- crime rate (2016-2018)
-- 311 complaints (2016-2018)
-- total populations
-- population between 25-54
-- gender ratio
-- white over minority ratio
-- education
-- median household income
-- poverty
-- gas station
-- fast food restaurant
-- public parks
-- pharmacies
-- rehabilitation centers
-
-```{r select certain data}
-
-heroin <- heroin %>% 
-  filter(year_column %in% c(2016, 2017, 2018, 2019, 2020))
-
-crime <- crime %>% 
-  filter(year %in% c(2016, 2017, 2018, 2019, 2020))
-
-complaints <- complaints %>% 
-  filter(year %in% c(2016, 2017, 2018, 2019, 2020))
-
-# split into training and testing by year here?
-
-```
-
-
-```{r}
-
+```{r create fishnet}
 fishnet <- st_make_grid(cincinnati,
                cellsize = 820, 
                square = TRUE) %>%
@@ -261,7 +227,7 @@ ggplot() +
 ```
 
 
-```{r}
+```{r splitting train and test}
 
 heroinTrain <- heroin %>% 
   filter(year_column %in% c(2016, 2017, 2018))
@@ -284,6 +250,10 @@ complaint19 <- complaints %>%
 complaint20 <- complaints%>% 
   filter(year == 2020)
 
+```
+
+
+```{r preparing training set}
 # add heroin in net
 heroinTrain_net <- 
   dplyr::select(heroinTrain) %>%  
@@ -313,13 +283,12 @@ heroinTrain_net <- heroinTrain_net %>%
     left_join(heroinTrain_net, . ) %>%
     st_sf() %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
-
 ```
 
 
-```{r}
+```{r test sets}
 
-# add 19 materials
+# 2019 test sets
 heroin19_net <- 
   dplyr::select(heroin19) %>%  
   mutate(countHeroin = 1) %>% 
@@ -338,7 +307,6 @@ heroin19_net <- heroin19_net %>%
     st_sf() %>%
   mutate(Crimecount = ifelse(is.na(Crimecount), 0, Crimecount))
 
-
 heroin19_net <- heroin19_net %>% 
   st_join(complaint19, ., join=st_within) %>% 
   st_drop_geometry() %>%
@@ -347,12 +315,9 @@ heroin19_net <- heroin19_net %>%
     left_join(heroin19_net, . ) %>%
     st_sf() %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
-```
 
 
-```{r}
-
-# add 20 material
+# 2020 test set
 heroin20_net <- 
   dplyr::select(heroin20) %>%  
   mutate(countHeroin = 1) %>% 
@@ -371,7 +336,6 @@ heroin20_net <- heroin20_net %>%
     st_sf() %>%
   mutate(Crimecount = ifelse(is.na(Crimecount), 0, Crimecount))
 
-
 heroin20_net <- heroin20_net %>% 
   st_join(complaint20, ., join=st_within) %>% 
   st_drop_geometry() %>%
@@ -380,16 +344,11 @@ heroin20_net <- heroin20_net %>%
     left_join(heroin20_net, . ) %>%
     st_sf() %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
-
-
-
-
 ```
 
 
-```{r}
+```{r running poission}
 
-# running poission
 poissionTrain <- glm(countHeroin ~ Crimecount + Complaintscount, family = "poisson",
                       data = heroinTrain_net)
 
@@ -406,38 +365,9 @@ Prediction20 <-
 ```
 
 
+# Getis Ord Spatial Hotspot
 
-
-
-```{r}
-
-library(viridis)
-
-options(scipen=999)
-ggplot() + 
-  geom_sf(data = cincinnati, fill = "black") +
-  stat_density2d(data = data.frame(st_coordinates(heroin)), 
-                 aes(X, Y, fill = after_stat(level), alpha = after_stat(level)),
-                 size = 0.01, bins = 60, geom = 'polygon') +
-  scale_fill_viridis(option = "magma", name = "Density") +
-  scale_alpha(range = c(0.00, 0.35), guide = "none") +
-  labs(title = "Density of Heroin Overdose") +
-  theme(axis.text.x=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks =element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        plot.subtitle = element_text(size = 9,face = "italic"),
-        plot.title = element_text(size = 12, face = "bold"),
-        panel.background = element_blank(),
-        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
-        )
-
-```
-
-
-```{r}
-
+```{r add heroin to fishnet}
 heroin_net <- 
   dplyr::select(heroin) %>%  
   mutate(countHeroin = 1) %>% 
@@ -449,8 +379,8 @@ heroin_net <-
 
 ggplot() +
   geom_sf(data = heroin_net, aes(fill = countHeroin), color = NA) +
-  scale_fill_viridis(option = "magma", name = "Robbery Counts") +
-  labs(title = "Count of Robberies for the Fishnet") +
+  scale_fill_viridis(option = "magma", name = "Heroin Counts") +
+  labs(title = "Count of Heroin Overdose for the Fishnet") +
   theme(axis.text.x=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks =element_blank(),
@@ -463,10 +393,52 @@ ggplot() +
         )
 ```
 
+```{r jenks break}
+breaks <- classIntervals(heroin_net$countHeroin, n = 5, style = "jenks")
+
+ggplot() +
+  geom_sf(data = heroin_net, aes(fill = countHeroin), color = NA) +
+  scale_fill_viridis(option = "magma", breaks = breaks$brks, labels = NULL)  + 
+labs(title = "Count of Heroin Overdose for the Fishnet") +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9, face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill = NA, linewidth = 0.8)
+  )
+```
+
+
+```{r global moran's I}
+
+coords <-  st_coordinates(heroin_net %>% st_centroid()) 
+neighborList <- knn2nb(knearneigh(coords, 4))
+spatialWeights <- nb2listw(neighborList, style="W")
+
+moranTest <- moran.mc(heroin_net$countHeroin, 
+                      spatialWeights, nsim = 999)
+
+ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c(1:999)])) +
+  geom_histogram(binwidth = 0.01, fill = "#124E78") +
+  geom_vline(aes(xintercept = moranTest$statistic), colour = "#6E0E0A" ,lwd=1) +
+  labs(title = "Observed and Permuted Moran's I for Stations with Most Rides",
+       subtitle = "Observed Moran's I in Red",
+       x = "Moran's I",
+       y = "Count") +
+  theme_light() +   
+theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=8),
+        axis.text.y=element_text(size=8), 
+        axis.title=element_text(size=10))
+
+```
 
 ```{r local moran I}
-library(spdep)
-library(sfdep)
 
 neigh_nbs <- heroin_net %>% 
   mutate(
@@ -478,8 +450,6 @@ neigh_nbs <- heroin_net %>%
 gi_hot_spots <- neigh_nbs %>% 
   mutate(Gi = local_g_perm(countHeroin, nb, wt, nsim = 999)) %>% 
   unnest(Gi) 
-
-
 
 gi_hot_spots <- gi_hot_spots %>%  
   dplyr::select(gi, p_folded_sim, uniqueID) |> 
@@ -506,26 +476,26 @@ gi_hot_spots %>%
   ggplot() + 
   geom_sf(aes(fill = classification), color = "black", lwd = 0.1) +
     scale_fill_brewer(type = "div", palette = 5) +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank()
-  )
-```
-
-
-```{r}
+  theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
 
 heroin_net <- gi_hot_spots %>% 
   mutate(hotspot = ifelse(classification %in% c("Very hot", "Hot", "Somewhat hot"), 1, 0)) %>% 
   st_drop_geometry() %>% 
   left_join(heroin_net, ., by = "uniqueID")
-
 ```
 
+# Simple Logistic Regression
 
-```{r}
-
+```{r adding risk factors to net}
 
 # adding crime to net
 heroin_net <- heroin_net %>% 
@@ -548,8 +518,6 @@ heroin_net <- heroin_net %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
 
 net_centroid <- st_centroid(heroin_net)
-library(FNN)
-source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
 
 # add hospitals
 heroin_net <- heroin_net %>% 
@@ -610,7 +578,6 @@ heroin_net <- heroin_net %>%
   filter(is.na(pop25_54) == FALSE)
 ```
 
-
 ```{r logistic without cv}
 
 kitchensink <- glm(hotspot ~ .,
@@ -621,8 +588,9 @@ kitchensink <- glm(hotspot ~ .,
 summary(kitchensink)
 ```
 
+# Logistic Regression with CV
 
-```{r logistic with CV}
+```{r logit function}
 
 logitCV <- function(dataset, id, dependentVariable, indVariables) {
   
@@ -658,8 +626,7 @@ logitCV <- function(dataset, id, dependentVariable, indVariables) {
 
 ```
 
-
-```{r}
+```{r logistic with CV}
 
 reg.vars <- c("Crimecount", "Complaintscount", "pharm.nn", "hospital.nn", "fast.nn", "fuel.nn", "rehab.nn", "parks.nn", "pop25_54", "MedHHInc", "MF_ratio", "race_ratio", "pctPoverty", "pctBachelor")
 
@@ -680,10 +647,9 @@ caret::confusionMatrix(kitchensink.logit.cv$hotspot, kitchensink.logit.cv$Predic
 
 ```
 
+# Principal Component Analysis
 
-```{r PCA}
-
-library(stats)
+```{r determine pc}
 
 pca_heroin <- heroin_net %>% 
   st_drop_geometry() %>% 
@@ -693,21 +659,20 @@ pca_heroin <- na.omit(pca_heroin)
 pc <- prcomp(pca_heroin,
              center = TRUE,
             scale. = TRUE)
+
 summary(pc)
 print(pc)
+```
 
-library(factoextra)
+```{r pca viz}
+
 fviz_eig(pc, addlabels = TRUE)
 fviz_pca_var(pc, col.var = "black")
-
 fviz_cos2(pc, choice = "var", axes = 1:7)
-
-
- 
 
 ```
 
-```{r}
+```{r compute pca}
 
 pca_net <- heroin_net %>% 
   mutate(pc1 = Crimecount * pc$rotation[1] + Complaintscount * pc$rotation[2] + pharm.nn * pc$rotation[3] + hospital.nn * pc$rotation[4] + fast.nn * pc$rotation[5] +  fuel.nn * pc$rotation[6] + rehab.nn * pc$rotation[7] + parks.nn *  pc$rotation[8] + pop25_54 * pc$rotation[9] + MedHHInc * pc$rotation[10] + MF_ratio * pc$rotation[11] + race_ratio * pc$rotation[12] +  pctPoverty * pc$rotation[13] + pctBachelor * pc$rotation[14]) %>% 
@@ -721,8 +686,9 @@ pca_net <- heroin_net %>%
 
 ```
 
+# PCA Logistic Regression
 
-```{r}
+```{r using pca in logistic regression}
 
 reg.vars <- c("pc1", "pc2", "pc3", "pc4", "pc5", "pc6", "pc7")
 
@@ -743,9 +709,8 @@ caret::confusionMatrix(pca.logit.cv$hotspot, pca.logit.cv$PredictionCat,
 ```
 
 
+```{r ROC curve}
 
-```{r}
-library(plotROC)
 ggplot(pca.logit.cv, aes(d = as.numeric(hotspot), m = Prediction)) +
   geom_roc(n.cuts = 50, labels = FALSE, colour = "#2E4756") +
     labs(title = "ROC Curve for Improved Model") +
@@ -760,16 +725,16 @@ ggplot(pca.logit.cv, aes(d = as.numeric(hotspot), m = Prediction)) +
         panel.border = element_rect(colour = "grey", fill=NA, linewidth =0.8))
 ```
 
-```{r}
-library(classInt)
-library(raster)
-library(spatstat.explore)
-rob_ppp <- as.ppp(st_coordinates(heroin), W = st_bbox(heroin_net))
-rob_KD.1000 <- spatstat.explore::density.ppp(rob_ppp, 1000)
-rob_KD.df <- data.frame(rasterToPoints(mask(raster(rob_KD.1000), as(cincinnati20, 'Spatial'))))
+# KDE Validation
+
+```{r KDE 1000 radii}
+
+heroin_ppp <- as.ppp(st_coordinates(heroin), W = st_bbox(heroin_net))
+heroin_KD.1000 <- spatstat.explore::density.ppp(heroin_ppp, 1000)
+heroin_KD.df <- data.frame(rasterToPoints(mask(raster(heroin_KD.1000), as(cincinnati20, 'Spatial'))))
 
 
-ggplot(data=rob_KD.df, aes(x=x, y=y)) +
+ggplot(data=heroin_KD.df, aes(x=x, y=y)) +
   geom_raster(aes(fill=layer)) + 
   coord_sf(crs=st_crs(heroin_net)) + 
   scale_fill_viridis(option = "magma", name="Density") +
@@ -786,23 +751,23 @@ ggplot(data=rob_KD.df, aes(x=x, y=y)) +
         )
 ```
 
-```{r}
+```{r comparison}
 
-rob_KDE_sum <- as.data.frame(rob_KD.1000) %>%
+heroin_KDE_sum <- as.data.frame(heroin_KD.1000) %>%
   st_as_sf(coords = c("x", "y"), crs = st_crs(heroin_net)) %>%
   aggregate(., heroin_net, mean) 
 
-kde_breaks <- classIntervals(rob_KDE_sum$value, 
+kde_breaks <- classIntervals(heroin_KDE_sum$value, 
                              n = 2, "fisher")
 
-rob_KDE_sf <- rob_KDE_sum %>%
+heroin_KDE_sf <- heroin_KDE_sum %>%
   mutate(label = "Kernel Density",
          Risk_Category = classInt::findCols(kde_breaks),
          Risk_Category = case_when(
            Risk_Category == 2 ~ "High",
            Risk_Category == 1 ~ "Low"))
 
-rob_risk_sf <-
+heroin_risk_sf <-
   pca.logit.cv %>%
   mutate(label = "Logistic Regression",
          Risk_Category = case_when(
@@ -812,7 +777,7 @@ rob_risk_sf <-
   rename(value = PredictionCat)
 
 
-rbind(rob_KDE_sf, rob_risk_sf) %>%
+rbind(heroin_KDE_sf, heroin_risk_sf) %>%
   na.omit() %>%
   gather(Variable, Value, -label, -Risk_Category, -geometry) %>%
   ggplot() +
@@ -833,9 +798,9 @@ rbind(rob_KDE_sf, rob_risk_sf) %>%
         )
 ```
 
+# Multi Criteria Analysis
 
-
-```{r}
+```{r MCA}
 
 scale_values <- function(x){(x-min(x))/(max(x)-min(x))}
 
@@ -868,48 +833,9 @@ score <- heroin_net %>%
 ```
 
 
-Predictor Variables so far: 
-- hospitals 0.1
-- crime rate (2016-2018) 0.1
-- 311 complaints (2016-2018) 0.1
-- population between 25-54 0.025
-- gender ratio 0.1
-- *white over minority ratio 0.05*
-- *education 0.025*
-- *median household income 0.1*
-- poverty 0.025
-- *gas station 0.1*
-- *fast food restaurant 0.1*
-- *public parks 0.1*
-- *pharmacies 0.05*
-- rehabilitation centers 0.025
-
-
-```{r}
-library(mapview)
+```{r map risk}
 
 mapview(score, zcol = "score", fill = "score", alpha = 0.3) 
+
 ```
-
-
-
-
-
-```{r poisson regresssion}
-
-reg.vars <- c("Crimecount", "Complaintscount", "pharm.nn", "hospital.nn", "fast.nn", "fuel.nn", "rehab.nn", "parks.nn", "pop25_54", "MedHHInc", "MF_ratio", "race_ratio", "pctPoverty", "pctBachelor")
-
-kitchensink.cv <- crossValidate(
-  dataset = heroin_net,
-  id = "cvID",
-  dependentVariable = "countHeroin",
-  indVariables = reg.vars) %>%
-    dplyr::select(cvID = cvID, countHeroin, Prediction, geometry)
-
-kitchensink.summary <- kitchensink.cv %>% 
-  mutate(Error = Prediction - countHeroin) %>% 
-  mutate(Mean_Error = mean(Error, na.rm=T))
-  
-```
-
 
