@@ -38,8 +38,8 @@ library(sf)
 library(lubridate)
 library(here)
 
-heroin <- read.csv(here("data", "Cincinnati_Fire_Incidents__CAD___including_EMS__ALS_BLS_.csv"))
-cincinnati <- st_read(here("data", "Cincinnati_City_Boundary.geojson")) %>% st_transform("EPSG:3735")
+heroin <- read.csv(here("data", "public", "Cincinnati_Fire_Incidents__CAD___including_EMS__ALS_BLS_.csv"))
+cincinnati <- st_read(here("data", "public", "Cincinnati_City_Boundary.geojson")) %>% st_transform("EPSG:3735")
 
 heroin <- heroin %>% 
   filter(CFD_INCIDENT_TYPE_GROUP != "NON-PROTOCOL PROBLEM TYPES") %>% 
@@ -76,7 +76,7 @@ ggplot()+
 
 ```{r hospital data}
 
-hospitals <- st_read(here("data", "Hospitals.geojson"))
+hospitals <- st_read(here("data","public", "Hospitals.geojson"))
 
 hospitals <- hospitals %>% 
   filter(STATE == "OH" & CITY == "CINCINNATI") %>% 
@@ -89,7 +89,7 @@ Specific crimes were selected for inclusion in analyses based on having been ide
 
 ```{r crime data}
 
-crime <- read.csv(here("data", "PDI__Police_Data_Initiative__Crime_Incidents.csv"))
+crime <- read.csv(here("data", "private", "PDI__Police_Data_Initiative__Crime_Incidents.csv"))
   
 crime_list <- c("AGGRAVATED ASSAULT", "BURGLARY", "BREAKING AND ENTERING", "ROBBERY", "DOMESTIC VIOLENCE", "MURDER	", "RAPE", "THEFT")
 
@@ -106,7 +106,7 @@ crime <- crime %>%
 `
 ```{r 311 complaints}
 
-complaints <- read_csv(here("data", "Cincinnati_311__Non-Emergency__Service_Requests.csv"))
+complaints <- read_csv(here("data", "private", "Cincinnati_311__Non-Emergency__Service_Requests.csv"))
   
 complaints <- complaints %>% 
   filter(is.na(LATITUDE) == FALSE & is.na(LONGITUDE) == FALSE) %>%
@@ -122,16 +122,16 @@ The connection between substance use and built environment variables (access to 
 ```{r built environment data}
 
 # gas station
-fuel <- st_read(here("data", "fuel.geojson")) %>% st_transform("EPSG:3735")
+fuel <- st_read(here("data", "public", "fuel.geojson")) %>% st_transform("EPSG:3735")
 
 # fast food restaurant 
-fastfood <- st_read(here("data", "fastfood.geojson")) %>% st_centroid() %>% st_transform("EPSG:3735")
+fastfood <- st_read(here("data", "public", "fastfood.geojson")) %>% st_centroid() %>% st_transform("EPSG:3735")
 
 # public parks
-parks <- st_read(here("data", "parks.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
+parks <- st_read(here("data", "public", "parks.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
 
 # pharmacies
-pharmacy <- st_read(here("data", "pharmacy.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
+pharmacy <- st_read(here("data","public", "pharmacy.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
 
 ```
 
@@ -170,7 +170,7 @@ cincinnati20 <- get_acs(geography = "tract",
           geometry=TRUE, output="wide") %>%
   st_transform("EPSG:3735")
 
-cincinnati_tracts <- st_read(here("data", "cincinnati_tracts.geojson")) %>% st_transform("EPSG:3735")
+cincinnati_tracts <- st_read(here("data", "public", "cincinnati_tracts.geojson")) %>% st_transform("EPSG:3735")
 
 cincinnati_tracts <- cincinnati_tracts %>% st_drop_geometry() %>% dplyr::select(GEOID) %>% as.list(GEOID)
 
@@ -191,7 +191,7 @@ cincinnati20 <- cincinnati20 %>%
 
 ```{r}
 
-rehab <- read.csv(here("data", "rehabilitation.csv"))
+rehab <- read.csv(here("data", "public", "rehabilitation.csv"))
   
 rehab <- rehab %>% 
   filter(is.na(Latitude) == FALSE & is.na(Longitude) == FALSE) %>%
