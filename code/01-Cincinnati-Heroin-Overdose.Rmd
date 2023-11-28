@@ -25,6 +25,10 @@ Version 1.0 \| First Created Nov 17, 2023 \| Updated Dec 1, 2023
 
 Keywords: K Nearest Neighbors, Moran’s I, Getis-Ord Gi*, Kernel Density Estimation, Random K-fold Cross Validation, Logistic Regression, Poisson Regression, ROC Curve, Principal Component Analysis, Multi-Criteria Analysis, Health Geography
 
+
+# Introduction
+
+
 ```{r library and setup}
 
 library(tidyverse)
@@ -47,6 +51,7 @@ library(plotROC)
 library(classInt)
 library(raster)
 library(spatstat.explore)
+library(leaflet)
 
 options(tigris_class = "sf")
 source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
@@ -517,7 +522,7 @@ heroin_net <- heroin_net %>%
     st_sf() %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
 
-net_centroid <- st_centroid(heroin_net)
+net_centroid <- st_centroid(heroin_net) %>% st_transform('ESRI:102728')
 
 # add hospitals
 heroin_net <- heroin_net %>% 
@@ -804,7 +809,7 @@ rbind(heroin_KDE_sf, heroin_risk_sf) %>%
 
 scale_values <- function(x){(x-min(x))/(max(x)-min(x))}
 
-score <- heroin_net %>% 
+risk_score <- heroin_net %>% 
   mutate(MedHHInc = ifelse(is.na(MedHHInc), 0, MedHHInc)) %>% 
   mutate(scl_crime = scale_values(Crimecount),
          scl_complaints = scale_values(Complaintscount),
@@ -827,15 +832,56 @@ score <- heroin_net %>%
          scl_fast_re = 0 - scl_fast + 1,
          scl_park_re = 0 - scl_park + 1,
          scl_pharm_re = 0 - scl_pharm + 1) %>% 
-  mutate(score = 0.1 * (scl_hospital + scl_crime + scl_complaints +  scl_gender + scl_income_re + scl_fuel_re + scl_fast_re +  scl_park_re) + 0.05 * (scl_race_re +  scl_pharm_re) + 0.025*(scl_pop +scl_edu_re + scl_poverty +  scl_rehab))
+  mutate(score = 0.1 * (scl_hospital + scl_crime + scl_complaints +  scl_gender + scl_income_re + scl_fuel_re + scl_fast_re +  scl_park_re) + 0.05 * (scl_race_re +  scl_pharm_re) + 0.025*(scl_pop +scl_edu_re + scl_poverty +  scl_rehab)) %>% 
+  st_as_sf()
   
+
+neighborhood <- st_read(here("data", "public", "neighborhood.geojson")) %>% st_transform('ESRI:102728') %>% st_zm()
+
+risk_score <- risk_score %>%
+  left_join(net_centroid %>% dplyr::select(uniqueID) %>% 
+               st_intersection(neighborhood %>% dplyr::select(SNA_NAME)) %>% 
+              st_drop_geometry(), by = "uniqueID") %>% 
+  mutate(SNA_NAME = ifelse(is.na(SNA_NAME), "NOT APPLICABLE", SNA_NAME))
+
 
 ```
 
 
 ```{r map risk}
 
-mapview(score, zcol = "score", fill = "score", alpha = 0.3) 
+pal <- colorBin(palette = "viridis", 
+                domain = risk_score$score, 
+                bins = c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7)) 
+
+labs <- paste0("<strong>", risk_score$SNA_NAME,
+               "</strong><br/>Heorin-Overdose Risk Score: ", risk_score$score
+               ) 
+
+leaflet <- risk_score %>%
+  st_transform("EPSG:4326") %>% 
+  leaflet() %>%
+  setView(lng = -84.51, lat = 39.10, zoom = 10.5) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addPolygons(weight = 1,
+              fillColor = ~pal(score), # change the name of the parameter in the bracket
+              popup = labs,
+              fillOpacity = 1) %>%
+  addLegend(position = "bottomright",
+            pal = pal,
+            values = ~risk_score, # change the name of the parameter after ~
+            title = "Risk Score") # change the name of the legend 
+
+leaflet
 
 ```
+
+
+# References 
+
+Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H. (2022). Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio. BMC public health, 22(1), 1-12.
+
+Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J. (2023). Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.
+
+Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L. (2023). Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling. American Journal of Criminal Justice, 1-25.
 

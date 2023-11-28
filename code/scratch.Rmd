@@ -32,6 +32,9 @@ https://data.cincinnati-oh.gov/Thriving-Neighborhoods/Cincinnati-311-Non-Emergen
 - **Cincinnati boundary**
 https://data-cagisportal.opendata.arcgis.com/datasets/ed78f4754b044ac5815d0a9efe9bb336_1/explore
 
+- **Neighborhood**
+https://data-cagisportal.opendata.arcgis.com/datasets/572561553c9e4d618d2d7939c5261d46_0/explore
+
 ```{r heroin data}
 library(tidyverse)
 library(sf)
@@ -888,7 +891,7 @@ Predictor Variables so far:
 ```{r}
 library(mapview)
 
-mapview(score, zcol = "score", fill = "score", alpha = 0.3) 
+mapview(score, zcol = "score", fill = "score", alpha = 1) 
 ```
 
 
