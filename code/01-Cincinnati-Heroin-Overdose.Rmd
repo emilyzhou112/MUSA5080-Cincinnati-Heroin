@@ -1,5 +1,5 @@
 ---
-title: "Geospatial Risk Prediction for Persistent Opioid-Involved Overdose Hotspots in Cincinnati Ohio"
+title: "Geospatial Risk Prediction of Persistent Opioid-Involved Overdose Hotspots in Cincinnati Ohio"
 author: "Emily Zhou, EChin Li"
 date: "`r Sys.Date()`"
 output:
@@ -28,6 +28,24 @@ Keywords: K Nearest Neighbors, Moran’s I, Getis-Ord Gi*, Kernel Density Estima
 
 # Introduction
 
+The opioid overdose crisis continues as one of the most significant public health challenges of the past two decades in the US. Between 1999 and 2019, the national age-adjusted opioid-involved overdose death rate increased from 2.9 per 100,000 population to 15.5 per 100,000. Rates have increased steeply during the COVID-19 pandemic. In 2020, the rate climbed to 21.4 per 100,000 and to 24.7 per 100,000 in 2021. Most literature to this date have focused on understanding the drivers of overdose crisis, which include drug supply, drug manufacturing, pain arising from work-related injuries, income inequality, and added stress, isolation, and economic disadvantage connected to the COVID-19 pandemic. Until recently, however, more and more studies have begun to consider the association between drug use, opioid-related mortality, and the built-environment. Contextual risk factors, especially features of the built environment, the presence of violent crime or crime associated with substance use, and neighborhood-level socioeconomic factors, have enabled more accurate identification of high-risk overdose areas, thus driving initiatives on alleviating overdose risk and crises. 
+
+We conducted a case study on opioid-overdose risk terrain modeling in Cincinnati, Ohio where the opioid epidemic has been a serious issue. Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hot spots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017. Today, heroin overdose incidences still remain high in the city since heroin and prescription drugs abuse have further led to other public health problems such as HIV and needle-borne diseases. 
+
+We combined multiple data sources, including emergency medical service response, crime and non-emergency reports data, American Community Survey data, and datasets that are proxies for local built environment to analyze the distributions of heroin-related overdose incidents in Cincinnati, Ohio. 
+
+Among studies of spatial epidemiology, geospatial clustering has been used to analyze the geographic variation of phenomena, such as the disproportionate impact of public health crisis on people with disabilities, and the concentrated vulnerability of socio-economically disadvantaged population under natural hazards. It allows the investigators to identify groups of spatial objects (i.e. clusters) that have similar characteristics and analyze patterns of the clusters (e.g., hot spots, cold spots). As such, we use Getis-Ord hotspot analyses to identify locations of persistent risk in Cincinnati from 2016-2020. We constructed measures of the socio-built environment and neighborhood demographic characteristics using principal components analysis (PCA). The resulting measures were used as covariates in a logistic regression with random k-fold cross validation to predict if an area was part of an opioid hotspot cluster. 
+
+Therefore, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as it could. On top of that, we aim to construct an interactive opioid overdose risk model of Cincinnati that we would like to bring to stakeholders and policymakers for better initiatives on alleviating overdose risk and crises. 
+
+The rest of the report is organized as follows: 
+
+The conceptualization and methodologies of this study were drawn in part from: 
+- Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio
+- Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021
+- Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
+
+The GitHub repository of this study is linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin). 
 
 ```{r library and setup}
 
@@ -61,6 +79,9 @@ tidycensus::census_api_key("e79f3706b6d61249968c6ce88794f6f556e5bf3d", overwrite
 
 # Data
 
+We used the [EMS dataset](https://data.cincinnati-oh.gov/Safety/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp) that includes all responses to heroin-related overdose incidents from the Cincinnati Fire Department between 2016 and 2020. Each incident record contains incident location information, including geospatial information, location address, a classification of a neighborhood in the city, time of the incident, and disposition of incident response. Data records regarding incidents outside of the study area, without geospatial information, and with unassociated disposition codes were excluded from this study. Records from canceled calls or false alarms and duplicated records were also excluded.
+
+
 ```{r heroin data, message=FALSE, warning=FALSE, results='hide'}
 
 heroin <- read.csv(here("data", "public", "Cincinnati_Fire_Incidents__CAD___including_EMS__ALS_BLS_.csv"))
@@ -68,7 +89,7 @@ cincinnati <- st_read(here("data", "public", "Cincinnati_City_Boundary.geojson")
 
 heroin <- heroin %>% 
   filter(CFD_INCIDENT_TYPE_GROUP != "NON-PROTOCOL PROBLEM TYPES") %>% 
-  filter(is.na(LATITUDE_X) == FALSE & is.na(LONGITUDE_X) == FALSE) %>%  # remove incidents withouth spatial info
+  filter(is.na(LATITUDE_X) == FALSE & is.na(LONGITUDE_X) == FALSE) %>%  # remove incidents without spatial info
   filter(is.na(DISPOSITION_TEXT) == FALSE         # remove record with un-associated disposition codes
          & CFD_INCIDENT_TYPE_GROUP !="CN: CANCEL" # remove records from canceled calls, false alarm, and duplication
          & CFD_INCIDENT_TYPE_GROUP !="CANCEL INCIDENT" 
@@ -90,6 +111,7 @@ heroin <- heroin %>%
 
 ```
 
+In addition, we used [Homeland Infrastructure Foundation-Level Data (HIFLD)]( https://hifld-geoplatform.opendata.arcgis.com/maps/geoplatform::hospitals/about) and [Substance Abuse and Mental Health Services Administration (SAMHSA) data](https://dpt2.samhsa.gov/treatment/directory.aspx) for 2015–2020 to obtain information about available healthcare services, such as hospitals, opioid treatment programs, and buprenorphine prescribing physicians, etc. We filtered data only for Cincinnati in the HIFLD dataset. The SAMHSA data were geocoded manually to get its location information first before reading into R. 
 
 ```{r medical resource data, message=FALSE, warning=FALSE}
 
@@ -106,6 +128,8 @@ rehab <- rehab %>%
   st_transform("EPSG:3735")
 
 ```
+
+Furthermore, we included the [crime rate data](https://data.cincinnati-oh.gov/safety/PDI-Police-Data-Initiative-Crime-Incidents/k59e-2pvf) from the Cincinnati Police Department between 2016 and 2020.
 
 Specific crimes were selected for inclusion in analyses based on having been identified in the literature as a spatial risk factor for drug overdose or substance use behavior or for having a theoretical relationship with drug overdose. 
 
@@ -124,6 +148,7 @@ crime <- crime %>%
 
 ```
 
+From the same data source, we included the [311 non-emergency service requests](https://data.cincinnati-oh.gov/Thriving-Neighborhoods/Cincinnati-311-Non-Emergency-Service-Requests/4cjh-bm8b) from 2016 to 2020. 
 
 ```{r 311 complaints data, warning=FALSE, message=FALSE}
 
@@ -138,8 +163,7 @@ complaints <- complaints %>%
 
 ```
 
-
-The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations, and highway exits) are also important. Public restrooms are associated with people who inject drugs (PWID) because many people (one study estimates 48%) use drugs in these spaces.Pharmacies represent an important access variable for several reasons. During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels.
+The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations, and highway exits) are also important. Public restrooms are associated with people who inject drugs (PWID) because many people (one study estimates 48%) use drugs in these spaces.Pharmacies represent an important access variable for several reasons. During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels. All of these data were queried from Open Street Map. 
 
 ```{r built environment data, warning=FALSE, message=FALSE}
 # gas station
@@ -155,6 +179,7 @@ parks <- st_read(here("data", "public", "parks.geojson")) %>% st_transform("EPSG
 pharmacy <- st_read(here("data","public", "pharmacy.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
 ```
 
+To identify demographic and sociographic characteristics corresponding to the EMS dataset, we utilized the ACS data for 2016 – 2020. We downloaded demographic information for each census tract, including total population, ratio of gender, adult population size, and race/ethnicity. The ACS data also included socioeconomic characteristics of each census tract, such as education, income, and poverty.
 
 ```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
 
@@ -204,7 +229,13 @@ cincinnati20 <- cincinnati20 %>%
 
 
 ```
+
+
 # Exploratory Data Analysis
+
+
+
+
 
 # Poission Regression
 
@@ -372,6 +403,8 @@ Prediction20 <-
 
 # Getis Ord Spatial Hotspot
 
+we first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps. The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized 
+
 ```{r add heroin to fishnet}
 heroin_net <- 
   dplyr::select(heroin) %>%  
@@ -382,28 +415,17 @@ heroin_net <-
          cvID = sample(round(nrow(fishnet) / 24), 
                        size=nrow(fishnet), replace = TRUE))
 
-ggplot() +
-  geom_sf(data = heroin_net, aes(fill = countHeroin), color = NA) +
-  scale_fill_viridis(option = "magma", name = "Heroin Counts") +
-  labs(title = "Count of Heroin Overdose for the Fishnet") +
-  theme(axis.text.x=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks =element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        plot.subtitle = element_text(size = 9,face = "italic"),
-        plot.title = element_text(size = 12, face = "bold"),
-        panel.background = element_blank(),
-        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
-        )
+
 ```
 
+
 ```{r jenks break}
+
 breaks <- classIntervals(heroin_net$countHeroin, n = 5, style = "jenks")
 
 ggplot() +
   geom_sf(data = heroin_net, aes(fill = countHeroin), color = NA) +
-  scale_fill_viridis(option = "magma", breaks = breaks$brks, labels = NULL)  + 
+  scale_fill_viridis(option = "magma", breaks = breaks$brks)  + 
 labs(title = "Count of Heroin Overdose for the Fishnet") +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -414,7 +436,8 @@ labs(title = "Count of Heroin Overdose for the Fishnet") +
         plot.title = element_text(size = 12, face = "bold"),
         panel.background = element_blank(),
         panel.border = element_rect(colour = "grey", fill = NA, linewidth = 0.8)
-  )
+  ) + 
+  theme(legend.key.size = unit(0.8, 'cm'), legend.text = element_text(size=6))
 ```
 
 
@@ -442,6 +465,10 @@ theme(plot.subtitle = element_text(size = 9,face = "italic"),
         axis.title=element_text(size=10))
 
 ```
+
+The global spatial clustering analysis yields only one statistic to describe the overall point pattern across the whole study area, it does not identify where the local clusters or spatial outliers are. To determine which areas are similar or different from the neighboring areas, we performed a local spatial analysis. Local indicators of spatial association (LISA) decompose global indicators into the contributions of individual observations to identify local cluster patterns or spatial outliers 
+
+
 
 ```{r local moran I}
 
@@ -497,6 +524,10 @@ heroin_net <- gi_hot_spots %>%
   st_drop_geometry() %>% 
   left_join(heroin_net, ., by = "uniqueID")
 ```
+
+The univariate LISA cluster map shows seven types of spatial association determined based on heroin-related overdose incident rate within a block and its neighboring blocks. If a grid has a high heroin incident rate with neighboring grids of high heroin incident rates, it was determined as a hot spot. At the same scheme, if a grid shows a low heroin incident rate with neighboring grids of low heroin incident rates, it was classified as a cold spot. 
+
+
 
 # Simple Logistic Regression
 
@@ -630,6 +661,7 @@ logitCV <- function(dataset, id, dependentVariable, indVariables) {
 }
 
 ```
+
 
 ```{r logistic with CV}
 
