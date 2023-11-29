@@ -30,24 +30,25 @@ Keywords: K Nearest Neighbors, Moran’s I, Getis-Ord Gi*, Kernel Density Estima
 
 The opioid overdose crisis continues as one of the most significant public health challenges of the past two decades in the US. Between 1999 and 2019, the national age-adjusted opioid-involved overdose death rate increased from 2.9 per 100,000 population to 15.5 per 100,000. Rates have increased steeply during the COVID-19 pandemic. In 2020, the rate climbed to 21.4 per 100,000 and to 24.7 per 100,000 in 2021. Most literature to this date have focused on understanding the drivers of overdose crisis, which include drug supply, drug manufacturing, pain arising from work-related injuries, income inequality, and added stress, isolation, and economic disadvantage connected to the COVID-19 pandemic. Until recently, however, more and more studies have begun to consider the association between drug use, opioid-related mortality, and the built-environment. Contextual risk factors, especially features of the built environment, the presence of violent crime or crime associated with substance use, and neighborhood-level socioeconomic factors, have enabled more accurate identification of high-risk overdose areas, thus driving initiatives on alleviating overdose risk and crises. 
 
-We conducted a case study on opioid-overdose risk terrain modeling in Cincinnati, Ohio where the opioid epidemic has been a serious issue. Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hot spots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017. Today, heroin overdose incidences still remain high in the city since heroin and prescription drugs abuse have further led to other public health problems such as HIV and needle-borne diseases. 
+We conducted a case study on opioid-overdose risk modeling in Cincinnati, Ohio where the opioid epidemic has been a serious issue. Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hot spots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017. Today, heroin overdose incidences still remain high in the city since heroin and prescription drugs abuse have further led to other public health problems such as HIV and needle-borne diseases. 
 
 We combined multiple data sources, including emergency medical service response, crime and non-emergency reports data, American Community Survey data, and datasets that are proxies for local built environment to analyze the distributions of heroin-related overdose incidents in Cincinnati, Ohio. 
 
-Among studies of spatial epidemiology, geospatial clustering has been used to analyze the geographic variation of phenomena, such as the disproportionate impact of public health crisis on people with disabilities, and the concentrated vulnerability of socio-economically disadvantaged population under natural hazards. It allows the investigators to identify groups of spatial objects (i.e. clusters) that have similar characteristics and analyze patterns of the clusters (e.g., hot spots, cold spots). As such, we use Getis-Ord hotspot analyses to identify locations of persistent risk in Cincinnati from 2016-2020. We constructed measures of the socio-built environment and neighborhood demographic characteristics using principal components analysis (PCA). The resulting measures were used as covariates in a logistic regression with random k-fold cross validation to predict if an area was part of an opioid hotspot cluster. 
+Among studies of spatial epidemiology, geospatial clustering has been used to analyze the geographic variation of phenomena, such as the disproportionate impact of public health crisis on people with disabilities, and the concentrated vulnerability of socio-economically disadvantaged population under natural hazards. It allows the investigators to identify groups of spatial objects (i.e. clusters) that have similar characteristics and analyze patterns of the clusters (e.g., hot spots, cold spots). As such, we used Getis-Ord hotspot analyses to identify locations of persistent risk in Cincinnati from 2016-2020. We constructed measures of the socio-built environment and neighborhood demographic characteristics using principal components analysis (PCA). The resulting measures were used as covariates in a logistic regression with random k-fold cross validation to predict if an area was part of an opioid hotspot cluster. All built environment risk factors were aggregated, scaled, and weighted to generate an interactive overdose risk terrain map. 
 
-Therefore, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as it could. On top of that, we aim to construct an interactive opioid overdose risk model of Cincinnati that we would like to bring to stakeholders and policymakers for better initiatives on alleviating overdose risk and crises. 
+On the technical side, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as possible. On the practical side, we aim to turn our final risk terrain model into an app that could serve as an early warning system by predicting/showing areas at high risk of opioid overdose. It would also serve as a online platform that connect populations at higher risk of opioid overdose with medical emergency and rehabilitation resources. Recognizing that our users likely prefer interactive dashboards that are visually more engaging, the app would include maps with overdose cluster locations, trend graphs over time, and charts illustrating the correlation between overdose rates and various factors. For the convenience of our users, the app would allow them to call for emergency services and medical assistance for themselves or for others at one tap. To encourage public-private partnership, this app would adopt the approach that OpenStreetMap took to allow both technical and non-technical users, private and public entities to update existing information, such as crime incidents, rehabilitation center capacities and location. We hope that non-technical stakeholders can use the app to allocate resources efficiently, directing outreach efforts, treatment facilities, and educational campaigns to areas with the highest predicted risk. We hope that the public would use this platform to foster community engagement and support for initiatives addressing the opioid crisis.
 
-The rest of the report is organized as follows: 
+The rest of the report is organized as follows. Section one describes our approach to access and pre-process the data. Section two documents an exploratory analysis we did using poission regression with only crime and 311 incidents. Section three explains the conceptualization our approach applying the Getis Ord G* statistics to determine spatial hotspots. Section four is the main part of this study, where we iclude all built environment predictors to run a logistic regression predicting if an area is an opioid overdose hotspot or not. Section five applies principal component analysis to reduce colinerity and include only half of the principal components into the model. Section six validates the accuracy of this model against a kernel density estimation while the last section constructs the risk terrain map. 
 
 The conceptualization and methodologies of this study were drawn in part from: 
 - Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio
 - Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021
 - Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
 
-The GitHub repository of this study is linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin). 
+The study data and code are available in public a GitHub repository linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin). 
 
-```{r library and setup}
+
+```{r library and setup, include=FALSE}
 
 library(tidyverse)
 library(tidycensus)
@@ -70,6 +71,7 @@ library(classInt)
 library(raster)
 library(spatstat.explore)
 library(leaflet)
+library(patchwork)
 
 options(tigris_class = "sf")
 source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
@@ -77,12 +79,12 @@ tidycensus::census_api_key("e79f3706b6d61249968c6ce88794f6f556e5bf3d", overwrite
 
 ```
 
+
 # Data
 
 We used the [EMS dataset](https://data.cincinnati-oh.gov/Safety/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp) that includes all responses to heroin-related overdose incidents from the Cincinnati Fire Department between 2016 and 2020. Each incident record contains incident location information, including geospatial information, location address, a classification of a neighborhood in the city, time of the incident, and disposition of incident response. Data records regarding incidents outside of the study area, without geospatial information, and with unassociated disposition codes were excluded from this study. Records from canceled calls or false alarms and duplicated records were also excluded.
 
-
-```{r heroin data, message=FALSE, warning=FALSE, results='hide'}
+```{r heroin data, message=FALSE, warning=FALSE, class.source='fold-show'}
 
 heroin <- read.csv(here("data", "public", "Cincinnati_Fire_Incidents__CAD___including_EMS__ALS_BLS_.csv"))
 cincinnati <- st_read(here("data", "public", "Cincinnati_City_Boundary.geojson")) %>% st_transform("EPSG:3735")
@@ -113,7 +115,7 @@ heroin <- heroin %>%
 
 In addition, we used [Homeland Infrastructure Foundation-Level Data (HIFLD)]( https://hifld-geoplatform.opendata.arcgis.com/maps/geoplatform::hospitals/about) and [Substance Abuse and Mental Health Services Administration (SAMHSA) data](https://dpt2.samhsa.gov/treatment/directory.aspx) for 2015–2020 to obtain information about available healthcare services, such as hospitals, opioid treatment programs, and buprenorphine prescribing physicians, etc. We filtered data only for Cincinnati in the HIFLD dataset. The SAMHSA data were geocoded manually to get its location information first before reading into R. 
 
-```{r medical resource data, message=FALSE, warning=FALSE}
+```{r medical resource data, message=FALSE, warning=FALSE, class.source='fold-show'}
 
 hospitals <- st_read(here("data","public", "Hospitals.geojson"))
 hospitals <- hospitals %>% 
@@ -129,11 +131,9 @@ rehab <- rehab %>%
 
 ```
 
-Furthermore, we included the [crime rate data](https://data.cincinnati-oh.gov/safety/PDI-Police-Data-Initiative-Crime-Incidents/k59e-2pvf) from the Cincinnati Police Department between 2016 and 2020.
+Furthermore, we included the [crime rate data](https://data.cincinnati-oh.gov/safety/PDI-Police-Data-Initiative-Crime-Incidents/k59e-2pvf) from the Cincinnati Police Department between 2016 and 2020. Specific crimes were selected for inclusion in analyses based on having been identified in the literature as a spatial risk factor for drug overdose or substance use behavior or for having a theoretical relationship with drug overdose. 
 
-Specific crimes were selected for inclusion in analyses based on having been identified in the literature as a spatial risk factor for drug overdose or substance use behavior or for having a theoretical relationship with drug overdose. 
-
-```{r crime data, message=FALSE, warning=FALSE}
+```{r crime data, message=FALSE, warning=FALSE, class.source='fold-show'}
 
 crime <- read.csv(here("data", "private", "PDI__Police_Data_Initiative__Crime_Incidents.csv"))
 crime_list <- c("AGGRAVATED ASSAULT", "BURGLARY", "BREAKING AND ENTERING", "ROBBERY", "DOMESTIC VIOLENCE", "MURDER	", "RAPE", "THEFT")
@@ -150,7 +150,7 @@ crime <- crime %>%
 
 From the same data source, we included the [311 non-emergency service requests](https://data.cincinnati-oh.gov/Thriving-Neighborhoods/Cincinnati-311-Non-Emergency-Service-Requests/4cjh-bm8b) from 2016 to 2020. 
 
-```{r 311 complaints data, warning=FALSE, message=FALSE}
+```{r 311 complaints data, warning=FALSE, message=FALSE, class.source='fold-show'}
 
 complaints <- read_csv(here("data", "private", "Cincinnati_311__Non-Emergency__Service_Requests.csv"))
 complaints <- complaints %>% 
@@ -163,9 +163,9 @@ complaints <- complaints %>%
 
 ```
 
-The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations, and highway exits) are also important. Public restrooms are associated with people who inject drugs (PWID) because many people (one study estimates 48%) use drugs in these spaces.Pharmacies represent an important access variable for several reasons. During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels. All of these data were queried from Open Street Map. 
+The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations and public parks) are also important. Public restrooms are associated with people who inject drugs (PWID) because many people use drugs in these spaces.Pharmacies represent an important access variable for several reasons. During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels. All of these data were queried from OpenStreetMap and preprocessed in QGIS (fixing geometry, creating spatial indices, and  unioning point with polygon data pieces)
 
-```{r built environment data, warning=FALSE, message=FALSE}
+```{r built environment data, warning=FALSE, message=FALSE, class.source='fold-show'}
 # gas station
 fuel <- st_read(here("data", "public", "fuel.geojson")) %>% st_transform("EPSG:3735")
 
@@ -179,9 +179,9 @@ parks <- st_read(here("data", "public", "parks.geojson")) %>% st_transform("EPSG
 pharmacy <- st_read(here("data","public", "pharmacy.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
 ```
 
-To identify demographic and sociographic characteristics corresponding to the EMS dataset, we utilized the ACS data for 2016 – 2020. We downloaded demographic information for each census tract, including total population, ratio of gender, adult population size, and race/ethnicity. The ACS data also included socioeconomic characteristics of each census tract, such as education, income, and poverty.
+To identify demographic and sociographic characteristics corresponding to the EMS dataset, we utilized the ACS data for 2016 – 2020. We downloaded demographic information for each census tract, including total population, gender, adult population size, and race/ethnicity. The ACS data also included socioeconomic characteristics of each census tract, such as education, income, and poverty. For each census tract, we computed the population aged between 25 and 54 (since this is the age group most vulnerable to opioid overdose), gender ratio, minority popultion ratio, percentage poverty, and percentage of population with a bachelor's degree. Note that the boundary of Cincinnati does not fully contain several census tracts and therefore we have tried our best to include tracts within Hamilton county that mostly fall within Cincinnati.  
 
-```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
+```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE, class.source='fold-show'}
 
 cincinnati20 <- get_acs(geography = "tract", 
           variables = c(
@@ -230,16 +230,36 @@ cincinnati20 <- cincinnati20 %>%
 
 ```
 
+The table below summarizes all of our predictor variables in this study. 
 
-# Exploratory Data Analysis
-
-
-
+| Variable Name                          | Source       | 
+| :----------:                           | :----------: |  
+| **Medical Service**                    |              |
+| Hospital                               | Homeland Infrastructure Foundation-Level Data |
+| Rehabilitation Center                  | Substance Abuse and Mental Health Services Administration |
+| **Built Environment**                  |                     |
+| Crime Rate                             | Open Data Cincinnati    |
+| 311 complaints                         | Open Data Cincinnati     |
+| Gas station                            | OSM     |
+| Public parks                           | OSM    |
+| Fast food restaurants                  | OSM    |
+| Pharmacies                             | OSM     |
+| **Socio-demographic Characteristics**  |             |
+| Population aged between 25 and 54      | ACS |
+| Gender ratio                           | ACS     |
+| White over minority ratio              | ACS     |
+| Population with a Bachelor's degree    | ACS     |
+| Median household income                | ACS     |
+| Population under poverty line          | ACS     |
+| Median Household Income                | ACS     |
 
 
 # Poission Regression
 
-```{r create fishnet}
+As part of our exploratory analysis, we first ran a poisson regression using number of 
+This requires us to 
+
+```{r create fishnet, warning=FALSE, message=FALSE}
 fishnet <- st_make_grid(cincinnati,
                cellsize = 820, 
                square = TRUE) %>%
@@ -263,7 +283,7 @@ ggplot() +
 ```
 
 
-```{r splitting train and test}
+```{r splitting train and test, warning=FALSE, message=FALSE}
 
 heroinTrain <- heroin %>% 
   filter(year_column %in% c(2016, 2017, 2018))
@@ -289,7 +309,8 @@ complaint20 <- complaints%>%
 ```
 
 
-```{r preparing training set}
+```{r preparing training set, warning=FALSE, message=FALSE}
+
 # add heroin in net
 heroinTrain_net <- 
   dplyr::select(heroinTrain) %>%  
@@ -322,7 +343,7 @@ heroinTrain_net <- heroinTrain_net %>%
 ```
 
 
-```{r test sets}
+```{r test sets, warning=FALSE, message=FALSE}
 
 # 2019 test sets
 heroin19_net <- 
@@ -383,7 +404,183 @@ heroin20_net <- heroin20_net %>%
 ```
 
 
-```{r running poission}
+```{r is there a difference between heroin incidents over year, fig.height=6, fig.width=15}
+
+
+plot1 <- ggplot() +
+  geom_sf(data = heroinTrain_net, aes(fill = countHeroin), color = NA) +
+  scale_fill_viridis(option = "rocket", name = "Counts") +
+  labs(title = "Heroin OD 2016-2018") +
+  theme(legend.position="bottom",
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+
+plot2 <- ggplot() +
+  geom_sf(data = heroin19_net, aes(fill = countHeroin), color = NA) +
+  scale_fill_viridis(option = "rocket", name = "Counts") +
+  labs(title = "Heroin OD 2019") +
+  theme(legend.position="bottom",
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+
+ plot3 <- ggplot() +
+  geom_sf(data = heroin20_net, aes(fill = countHeroin), color = NA) +
+  scale_fill_viridis(option = "rocket", name = "Counts") +
+  labs(title = "Heroin OD 2020") +
+  theme(legend.position="bottom",
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+ 
+plot1 + plot2 + plot3
+```
+
+
+```{r heroin over crime and complaints，fig.height=6, fig.width=13}
+
+options(scipen=0)
+plot1_1 <- ggplot() +
+  geom_sf(data = cincinnati, fill = "black") +
+  stat_density2d(data = data.frame(st_coordinates(heroinTrain)), 
+                 aes(X, Y, fill = after_stat(level), alpha = after_stat(level)),
+                 size = 0.01, bins = 60, geom = 'polygon') +
+  scale_fill_viridis(option = "rocket", name = "Density") +
+  scale_alpha(range = c(0.00, 0.35), guide = "none") +
+  geom_sf(data = sample_n(crimeTrain, 3000), size = 0.03, colour = "white", alpha = 0.5) +
+  labs(title = "Heroin OD and Crime 2016-2018") +
+  theme(legend.position="bottom",
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+
+plot1_2 <- ggplot() +
+  geom_sf(data = cincinnati, fill = "black") +
+  stat_density2d(data = data.frame(st_coordinates(heroinTrain)), 
+                 aes(X, Y, fill = after_stat(level), alpha = after_stat(level)),
+                 size = 0.01, bins = 60, geom = 'polygon') +
+  scale_fill_viridis(option = "rocket", name = "Density") +
+  scale_alpha(range = c(0.00, 0.35), guide = "none") +
+  geom_sf(data = sample_n(complaintTrain, 3000), size = 0.03, colour = "white", alpha = 0.5) +
+  labs(title = "Heroin OD and Complaint 2016-2018") +
+  theme(legend.position="bottom",
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+
+plot1_1 + plot1_2
+```
+
+
+
+```{r cor plots, fig.height=6, fig.width=12}
+
+plot4 <- heroinTrain_net %>%
+  st_drop_geometry() %>% 
+  dplyr::select(-c(uniqueID, cvID)) %>% 
+  pivot_longer(cols = -countHeroin, # everything except measurement
+               names_to = "Type", # categorizes all quantitative variables into Type
+               values_to = "Number") %>% 
+  ggplot(aes(x= countHeroin, y = Number)) +
+  geom_point(size = 0.01, color = "#000004") +  
+  geom_smooth(method='lm', formula= y~x, lwd=0.5, se = FALSE, color = "#BB3754") +
+  facet_wrap(~ Type, scales = "free", ncol = 2, labeller= labeller(Type = c(
+    `Crimecount` = "Crime",
+    `Complaintscount` = "311 Complaints"))) +
+  labs(title = "Scatter Plots of Predictor Variables 2016-18") +
+    theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8), 
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, size=0.8))
+
+plot5 <- heroin19_net %>%
+  st_drop_geometry() %>% 
+  dplyr::select(-c(uniqueID, cvID)) %>% 
+  pivot_longer(cols = -countHeroin, # everything except measurement
+               names_to = "Type", # categorizes all quantitative variables into Type
+               values_to = "Number") %>% 
+  ggplot(aes(x= countHeroin, y = Number)) +
+  geom_point(size = 0.01, color = "#000004") +  
+  geom_smooth(method='lm', formula= y~x, lwd=0.5, se = FALSE, color = "#BB3754") +
+  facet_wrap(~ Type, scales = "free", ncol = 2, labeller= labeller(Type = c(
+    `Crimecount` = "Crime",
+    `Complaintscount` = "311 Complaints"))) +
+  labs(title = "Scatter Plots of Predictor Variables 2019") +
+    theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8), 
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, size=0.8))
+
+
+plot6 <- heroin20_net %>%
+  st_drop_geometry() %>% 
+  dplyr::select(-c(uniqueID, cvID)) %>% 
+  pivot_longer(cols = -countHeroin, # everything except measurement
+               names_to = "Type", # categorizes all quantitative variables into Type
+               values_to = "Number") %>% 
+  ggplot(aes(x= countHeroin, y = Number)) +
+  geom_point(size = 0.01, color = "#000004") +  
+  geom_smooth(method='lm', formula= y~x, lwd=0.5, se = FALSE, color = "#BB3754") +
+  facet_wrap(~ Type, scales = "free", ncol = 2, labeller= labeller(Type = c(
+    `Crimecount` = "Crime",
+    `Complaintscount` = "311 Complaints"))) +
+  labs(title = "Scatter Plots of Predictor Variables 2020") +
+    theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8), 
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, size=0.8))
+
+plot4 + plot5 + plot6
+
+```
+
+
+```{r running poission, warning=FALSE, message=FALSE}
 
 poissionTrain <- glm(countHeroin ~ Crimecount + Complaintscount, family = "poisson",
                       data = heroinTrain_net)
@@ -391,21 +588,37 @@ poissionTrain <- glm(countHeroin ~ Crimecount + Complaintscount, family = "poiss
 Prediction19 <-
   mutate(heroin19_net, Prediction = predict(poissionTrain, heroin19_net, type = "response")) %>% 
   mutate(Error = countHeroin - Prediction) %>% 
-  mutate(MAE = mean(abs(Error)))
-
+  mutate(MAE = mean(abs(Error))) %>% 
+  mutate(SD_MAE = sd(Error)) %>% 
+  mutate(prediction = "2019") %>% 
+  slice(1:1)
 
 Prediction20 <-
   mutate(heroin20_net, Prediction = predict(poissionTrain, heroin20_net, type = "response")) %>% 
   mutate(Error = countHeroin - Prediction) %>% 
-  mutate(MAE = mean(abs(Error)))
+  mutate(MAE = mean(abs(Error))) %>% 
+  mutate(SD_MAE = sd(Error)) %>% 
+  mutate(prediction = "2020") %>% 
+  slice(1:1)
+
+rbind(Prediction19, Prediction20) %>% 
+  st_drop_geometry() %>% 
+  group_by(prediction) %>% 
+  summarize(Mean_MAE = round(MAE, 2),
+              SD_MAE = round(SD_MAE, 2)) %>%
+  kable(col.name=c("Prediction", "Mean Absolute Error",'Standard Deviation MAE')) %>%
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed")) 
+
 ```
+
 
 
 # Getis Ord Spatial Hotspot
 
-we first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps. The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized 
+We first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps. The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized 
 
-```{r add heroin to fishnet}
+```{r add all heroin overdose to fishnet, warning=FALSE, message=FALSE}
+
 heroin_net <- 
   dplyr::select(heroin) %>%  
   mutate(countHeroin = 1) %>% 
@@ -415,17 +628,16 @@ heroin_net <-
          cvID = sample(round(nrow(fishnet) / 24), 
                        size=nrow(fishnet), replace = TRUE))
 
-
 ```
 
 
-```{r jenks break}
+```{r jenks break, warning=FALSE, message=FALSE}
 
 breaks <- classIntervals(heroin_net$countHeroin, n = 5, style = "jenks")
 
 ggplot() +
   geom_sf(data = heroin_net, aes(fill = countHeroin), color = NA) +
-  scale_fill_viridis(option = "magma", breaks = breaks$brks)  + 
+  scale_fill_viridis(option = "rocket", breaks = breaks$brks, name = "Count")  + 
 labs(title = "Count of Heroin Overdose for the Fishnet") +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -441,7 +653,7 @@ labs(title = "Count of Heroin Overdose for the Fishnet") +
 ```
 
 
-```{r global moran's I}
+```{r global moran's I, warning=FALSE, message=FALSE}
 
 coords <-  st_coordinates(heroin_net %>% st_centroid()) 
 neighborList <- knn2nb(knearneigh(coords, 4))
@@ -451,9 +663,9 @@ moranTest <- moran.mc(heroin_net$countHeroin,
                       spatialWeights, nsim = 999)
 
 ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c(1:999)])) +
-  geom_histogram(binwidth = 0.01, fill = "#124E78") +
+  geom_histogram(binwidth = 0.01, fill = "black") +
   geom_vline(aes(xintercept = moranTest$statistic), colour = "#6E0E0A" ,lwd=1) +
-  labs(title = "Observed and Permuted Moran's I for Stations with Most Rides",
+  labs(title = "Observed and Permuted Moran's I",
        subtitle = "Observed Moran's I in Red",
        x = "Moran's I",
        y = "Count") +
@@ -468,15 +680,15 @@ theme(plot.subtitle = element_text(size = 9,face = "italic"),
 
 The global spatial clustering analysis yields only one statistic to describe the overall point pattern across the whole study area, it does not identify where the local clusters or spatial outliers are. To determine which areas are similar or different from the neighboring areas, we performed a local spatial analysis. Local indicators of spatial association (LISA) decompose global indicators into the contributions of individual observations to identify local cluster patterns or spatial outliers 
 
+We then used the Getis-Ord Gi* hotspot statistic to identify and map clusters (i.e., grids with high overdose rates surrounded by grids with high rates). Each hotspot identified is statistically significant at the p<0.05 level. For estimating the Getis-Ord clusters, we used the queen’s criterion to define our spatial weights matrix.
 
-
-```{r local moran I}
+```{r local moran I, warning=FALSE, message=FALSE}
 
 neigh_nbs <- heroin_net %>% 
   mutate(
     nb = st_contiguity(geometry),  # neighbors share border    
     wt = st_weights(nb), # row-standardized weights              
-    neigh_lag = st_lag(countHeroin, nb, wt)  # calculate spatial lag of mean sale price
+    neigh_lag = st_lag(countHeroin, nb, wt)  
   )
 
 gi_hot_spots <- neigh_nbs %>% 
@@ -507,7 +719,8 @@ gi_hot_spots <- gi_hot_spots %>%
 gi_hot_spots %>% 
   ggplot() + 
   geom_sf(aes(fill = classification), color = "black", lwd = 0.1) +
-    scale_fill_brewer(type = "div", palette = 5) +
+  scale_fill_brewer(type = "div", palette = 6, name = "Classification") +
+  labs(title = "Spatial Hotspots and Coldspots of Heroin Overdose Incidence") +
   theme(axis.text.x=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks =element_blank(),
@@ -527,11 +740,11 @@ heroin_net <- gi_hot_spots %>%
 
 The univariate LISA cluster map shows seven types of spatial association determined based on heroin-related overdose incident rate within a block and its neighboring blocks. If a grid has a high heroin incident rate with neighboring grids of high heroin incident rates, it was determined as a hot spot. At the same scheme, if a grid shows a low heroin incident rate with neighboring grids of low heroin incident rates, it was classified as a cold spot. 
 
+# Logistic Regression
 
+## Built Environment Features
 
-# Simple Logistic Regression
-
-```{r adding risk factors to net}
+```{r adding risk factors to net, warning=FALSE, message=FALSE}
 
 # adding crime to net
 heroin_net <- heroin_net %>% 
@@ -553,7 +766,7 @@ heroin_net <- heroin_net %>%
     st_sf() %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
 
-net_centroid <- st_centroid(heroin_net) %>% st_transform('ESRI:102728')
+net_centroid <- st_centroid(heroin_net)
 
 # add hospitals
 heroin_net <- heroin_net %>% 
@@ -608,24 +821,88 @@ heroin_net <- heroin_net %>%
 # add demographic vars
 heroin_net <- heroin_net %>% 
   left_join(net_centroid %>% 
-              select(uniqueID) %>% 
+              dplyr::select(uniqueID) %>% 
               st_intersection(cincinnati20) %>% 
-              st_drop_geometry() %>% select(-GEOID), by = "uniqueID") %>% 
+              st_drop_geometry() %>% dplyr::select(-GEOID), by = "uniqueID") %>% 
   filter(is.na(pop25_54) == FALSE)
 ```
 
-```{r logistic without cv}
+
+```{r cor for all predictors, fig.height=12, fig.width=8, message=FALSE, warning=FALSE}
+
+heroin_net_long <- heroin_net%>% 
+  st_drop_geometry() %>% 
+  dplyr::select(-c(uniqueID, cvID, gi, p_folded_sim, classification, hotspot, Totalpop)) %>% 
+  pivot_longer(cols = -countHeroin, # everything except measurement
+               names_to = "Type", # categorizes all quantitative variables into Type
+               values_to = "Number") 
+
+correlation.cor <-
+  heroin_net_long %>%
+    group_by(Type) %>%
+    summarize(correlation = cor(Number, countHeroin, use = "complete.obs"))
+
+heroin_net_long %>%
+  ggplot(aes(x= Number, y = countHeroin)) +
+  geom_point(size = 0.01, color = "#000004") +  
+  geom_text(data = correlation.cor, aes(label = paste("r =", round(correlation, 2))),
+            x=-Inf, y=Inf, vjust = 1.5, hjust = -.1, size=3) +
+  geom_smooth(method='lm', formula= y~x, lwd=0.5, se = FALSE, color = "#BB3754") +
+  facet_wrap(~ Type, scales = "free", ncol = 2, labeller= labeller(Type = c(
+    `Complaintscount` = "Complaints",
+    `Crimecount` = "Crime",
+    `fast.nn` = "Distance to Fast Food",
+    `fuel.nn` = "Distance to Gas Stations",
+    `hospital.nn` = "Distance to Hospital",
+    `MedHHInc` = "Median Household Income",
+    `MF_ratio` = "Gender Ratio",
+    `parks.nn` = "Distance to Parks",
+    `pctBachelor` = "Percent Bachelor's Degree",
+    `pctPoverty` = "Poverty Rate",
+    `pharm.nn` = "Distance to Pharmacy",
+    `pop25_54` = "Population 25_54", 
+    `rehab.nn` = "Distance to Rehab Center",
+    `race_ratio` = "Racial Majority over Minority"))) +
+  labs(title = "Scatter Plots of All Predictor Variables") +
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=6),
+        axis.text.y=element_text(size=6), 
+        axis.title=element_text(size=8), 
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, size=0.8))
+```
+
+
+
+## Simpile Logit
+
+```{r logistic without cv, warning=FALSE, message=FALSE}
 
 kitchensink <- glm(hotspot ~ .,
                   data=heroin_net %>% 
                     st_drop_geometry() %>% 
                     dplyr::select(hotspot, Crimecount, Complaintscount, pharm.nn, hospital.nn, fast.nn, fuel.nn, rehab.nn, parks.nn, pop25_54, MedHHInc, MF_ratio, race_ratio, pctPoverty, pctBachelor), family="binomial" (link="logit"))
 
-summary(kitchensink)
+
+kitchen_sum <- summary(kitchensink)
+coefficients_table <- as.data.frame(kitchen_sum$coefficients)
+
+coefficients_table$significance <- ifelse(coefficients_table$`Pr(>|z|)` < 0.001, '***',
+                                         ifelse(coefficients_table$`Pr(>|z|)` < 0.01, '**',
+                                                ifelse(coefficients_table$`Pr(>|z|)` < 0.05, '*',
+                                                       ifelse(coefficients_table$`Pr(>|z|)` < 0.1, '.', ''))))
+
+coefficients_table$p_value <- paste0(round(coefficients_table$`Pr(>|z|)`, digits = 3), coefficients_table$significance)
+
+coefficients_table %>%
+  dplyr::select(-significance, -`Pr(>|z|)`) %>% 
+  kable(align = "r") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  footnote(general_title = "\n", general = "Table 1")
 ```
 
-# Logistic Regression with CV
-
+## Logit with CV
 ```{r logit function}
 
 logitCV <- function(dataset, id, dependentVariable, indVariables) {
@@ -679,12 +956,19 @@ kitchensink.logit.cv <- kitchensink.logit.cv %>%
   mutate(PredictionCat  = as.factor(ifelse(kitchensink.logit.cv$Prediction > 0.5 , 1, 0))) %>% 
   mutate(hotspot = as.factor(hotspot))
 
-caret::confusionMatrix(kitchensink.logit.cv$hotspot, kitchensink.logit.cv$PredictionCat, 
-                       positive = "1")
 
+
+mosaicplot(caret::confusionMatrix(kitchensink.logit.cv$hotspot, kitchensink.logit.cv$PredictionCat, 
+                       positive = "1")$table, color=c("#DBC2CF","#9FA2B2"), main = "Mosaic Plot for Original Confusion Matrix",
+           xlab = "Prediction", ylab = "Reference")
 ```
 
-# Principal Component Analysis
+
+# Principal Component Analysis (PCA)
+
+## PC Identification
+
+PCA is a dimension reduction technique that is commonly used to reduce the number of variables used in analyses while preserving the information from them.
 
 ```{r determine pc}
 
@@ -723,7 +1007,9 @@ pca_net <- heroin_net %>%
 
 ```
 
-# PCA Logistic Regression
+## PCA Logistic Regression
+
+We estimated logistic regressions with an autologistic term to predict if a grid was in a hotspot (0/1) as identified by the Getis-Ord Gi* statistic as the outcome and the components derived from the PCA as the explanatory variables.
 
 ```{r using pca in logistic regression}
 
@@ -869,7 +1155,7 @@ risk_score <- heroin_net %>%
   
 
 neighborhood <- st_read(here("data", "public", "neighborhood.geojson")) %>% st_transform('ESRI:102728') %>% st_zm()
-
+net_centroid <- st_centroid(heroin_net) %>% st_transform('ESRI:102728')
 risk_score <- risk_score %>%
   left_join(net_centroid %>% dplyr::select(uniqueID) %>% 
                st_intersection(neighborhood %>% dplyr::select(SNA_NAME)) %>% 
