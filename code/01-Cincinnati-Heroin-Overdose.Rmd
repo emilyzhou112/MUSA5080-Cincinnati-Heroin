@@ -20,33 +20,53 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
+Version 2.0 \| First Created Nov 17, 2023 \| Updated Dec 1, 2023
 
-Version 1.0 \| First Created Nov 17, 2023 \| Updated Dec 1, 2023
-
-Keywords: K Nearest Neighbors, Moran’s I, Getis-Ord Gi*, Kernel Density Estimation, Random K-fold Cross Validation, Logistic Regression, Poisson Regression, ROC Curve, Principal Component Analysis, Multi-Criteria Analysis, Health Geography
-
+Keywords: K Nearest Neighbors, Moran's I, Getis-Ord Gi\*, Kernel Density Estimation, Random K-fold Cross Validation, Logistic Regression, Poisson Regression, ROC Curve, Principal Component Analysis, Multi-Criteria Analysis, Health Geography
 
 # Introduction
 
-The opioid overdose crisis continues as one of the most significant public health challenges of the past two decades in the US. Between 1999 and 2019, the national age-adjusted opioid-involved overdose death rate increased from 2.9 per 100,000 population to 15.5 per 100,000. Rates have increased steeply during the COVID-19 pandemic. In 2020, the rate climbed to 21.4 per 100,000 and to 24.7 per 100,000 in 2021. Most literature to this date have focused on understanding the drivers of overdose crisis, which include drug supply, drug manufacturing, pain arising from work-related injuries, income inequality, and added stress, isolation, and economic disadvantage connected to the COVID-19 pandemic. Until recently, however, more and more studies have begun to consider the association between drug use, opioid-related mortality, and the built-environment. Contextual risk factors, especially features of the built environment, the presence of violent crime or crime associated with substance use, and neighborhood-level socioeconomic factors, have enabled more accurate identification of high-risk overdose areas, thus driving initiatives on alleviating overdose risk and crises. 
+The opioid overdose crisis continues as one of the most significant public health challenges of the past two decades in the US.
+Between 1999 and 2019, the national age-adjusted opioid-involved overdose death rate increased from 2.9 per 100,000 population to 15.5 per 100,000.
+Rates have increased steeply during the COVID-19 pandemic.
+In 2020, the rate climbed to 21.4 per 100,000 and to 24.7 per 100,000 in 2021.
+Most literature to this date have focused on understanding the drivers of overdose crisis, which include drug supply, drug manufacturing, pain arising from work-related injuries, income inequality, and added stress, isolation, and economic disadvantage connected to the COVID-19 pandemic.
+Until recently, however, more and more studies have begun to consider the association between drug use, opioid-related mortality, and the built-environment.
+Contextual risk factors, especially features of the built environment, the presence of violent crime or crime associated with substance use, and neighborhood-level socioeconomic factors, have enabled more accurate identification of high-risk overdose areas, thus driving initiatives on alleviating overdose risk and crises.
 
-We conducted a case study on opioid-overdose risk modeling in Cincinnati, Ohio where the opioid epidemic has been a serious issue. Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hot spots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017. Today, heroin overdose incidences still remain high in the city since heroin and prescription drugs abuse have further led to other public health problems such as HIV and needle-borne diseases. 
+We conducted a case study on opioid-overdose risk modeling in Cincinnati, Ohio where the opioid epidemic has been a serious issue.
+Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hot spots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017.
+Today, heroin overdose incidences still remain high in the city since heroin and prescription drugs abuse have further led to other public health problems such as HIV and needle-borne diseases.
 
-We combined multiple data sources, including emergency medical service response, crime and non-emergency reports data, American Community Survey data, and datasets that are proxies for local built environment to analyze the distributions of heroin-related overdose incidents in Cincinnati, Ohio. 
+We combined multiple data sources, including emergency medical service response, crime and non-emergency reports data, American Community Survey data, and datasets that are proxies for local built environment to analyze the distributions of heroin-related overdose incidents in Cincinnati, Ohio.
 
-Among studies of spatial epidemiology, geospatial clustering has been used to analyze the geographic variation of phenomena, such as the disproportionate impact of public health crisis on people with disabilities, and the concentrated vulnerability of socio-economically disadvantaged population under natural hazards. It allows the investigators to identify groups of spatial objects (i.e. clusters) that have similar characteristics and analyze patterns of the clusters (e.g., hot spots, cold spots). As such, we used Getis-Ord hotspot analyses to identify locations of persistent risk in Cincinnati from 2016-2020. We constructed measures of the socio-built environment and neighborhood demographic characteristics using principal components analysis (PCA). The resulting measures were used as covariates in a logistic regression with random k-fold cross validation to predict if an area was part of an opioid hotspot cluster. All built environment risk factors were aggregated, scaled, and weighted to generate an interactive overdose risk terrain map. 
+Among studies of spatial epidemiology, geospatial clustering has been used to analyze the geographic variation of phenomena, such as the disproportionate impact of public health crisis on people with disabilities, and the concentrated vulnerability of socio-economically disadvantaged population under natural hazards.
+It allows the investigators to identify groups of spatial objects (i.e. clusters) that have similar characteristics and analyze patterns of the clusters (e.g., hot spots, cold spots).
+As such, we used Getis-Ord hotspot analyses to identify locations of persistent risk in Cincinnati from 2016-2020.
+We constructed measures of the socio-built environment and neighborhood demographic characteristics using principal components analysis (PCA).
+The resulting measures were used as covariates in a logistic regression with random k-fold cross validation to predict if an area was part of an opioid hotspot cluster.
+All built environment risk factors were aggregated, scaled, and weighted to generate an interactive overdose risk terrain map.
 
-On the technical side, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as possible. On the practical side, we aim to turn our final risk terrain model into an app that could serve as an early warning system by predicting/showing areas at high risk of opioid overdose. It would also serve as a online platform that connect populations at higher risk of opioid overdose with medical emergency and rehabilitation resources. Recognizing that our users likely prefer interactive dashboards that are visually more engaging, the app would include maps with overdose cluster locations, trend graphs over time, and charts illustrating the correlation between overdose rates and various factors. For the convenience of our users, the app would allow them to call for emergency services and medical assistance for themselves or for others at one tap. To encourage public-private partnership, this app would adopt the approach that OpenStreetMap took to allow both technical and non-technical users, private and public entities to update existing information, such as crime incidents, rehabilitation center capacities and location. We hope that non-technical stakeholders can use the app to allocate resources efficiently, directing outreach efforts, treatment facilities, and educational campaigns to areas with the highest predicted risk. We hope that the public would use this platform to foster community engagement and support for initiatives addressing the opioid crisis.
+On the technical side, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as possible.
+On the practical side, we aim to turn our final risk terrain model into an app that could serve as an early warning system by predicting/showing areas at high risk of opioid overdose.
+It would also serve as a online platform that connect populations at higher risk of opioid overdose with medical emergency and rehabilitation resources.
+Recognizing that our users likely prefer interactive dashboards that are visually more engaging, the app would include maps with overdose cluster locations, trend graphs over time, and charts illustrating the correlation between overdose rates and various factors.
+For the convenience of our users, the app would allow them to call for emergency services and medical assistance for themselves or for others at one tap.
+To encourage public-private partnership, this app would adopt the approach that OpenStreetMap took to allow both technical and non-technical users, private and public entities to update existing information, such as crime incidents, rehabilitation center capacities and location.
+We hope that non-technical stakeholders can use the app to allocate resources efficiently, directing outreach efforts, treatment facilities, and educational campaigns to areas with the highest predicted risk.
+We hope that the public would use this platform to foster community engagement and support for initiatives addressing the opioid crisis.
 
-The rest of the report is organized as follows. Section one describes our approach to access and pre-process the data. Section two documents an exploratory analysis we did using poission regression with only crime and 311 incidents. Section three explains the conceptualization our approach applying the Getis Ord G* statistics to determine spatial hotspots. Section four is the main part of this study, where we iclude all built environment predictors to run a logistic regression predicting if an area is an opioid overdose hotspot or not. Section five applies principal component analysis to reduce colinerity and include only half of the principal components into the model. Section six validates the accuracy of this model against a kernel density estimation while the last section constructs the risk terrain map. 
+The rest of the report is organized as follows.
+Section one describes our approach to access and pre-process the data.
+Section two documents an exploratory analysis we did using poission regression with only crime and 311 incidents.
+Section three explains the conceptualization our approach applying the Getis Ord G\* statistics to determine spatial hotspots.
+Section four is the main part of this study, where we iclude all built environment predictors to run a logistic regression predicting if an area is an opioid overdose hotspot or not.
+Section five applies principal component analysis to reduce colinerity and include only half of the principal components into the model.
+Section six validates the accuracy of this model against a kernel density estimation while the last section constructs the risk terrain map.
 
-The conceptualization and methodologies of this study were drawn in part from: 
-- Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio
-- Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021
-- Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
+The conceptualization and methodologies of this study were drawn in part from: - Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio - Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021 - Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
 
-The study data and code are available in public a GitHub repository linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin). 
-
+The study data and code are available in public a GitHub repository linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin).
 
 ```{r library and setup, include=FALSE}
 
@@ -79,10 +99,12 @@ tidycensus::census_api_key("e79f3706b6d61249968c6ce88794f6f556e5bf3d", overwrite
 
 ```
 
-
 # Data
 
-We used the [EMS dataset](https://data.cincinnati-oh.gov/Safety/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp) that includes all responses to heroin-related overdose incidents from the Cincinnati Fire Department between 2016 and 2020. Each incident record contains incident location information, including geospatial information, location address, a classification of a neighborhood in the city, time of the incident, and disposition of incident response. Data records regarding incidents outside of the study area, without geospatial information, and with unassociated disposition codes were excluded from this study. Records from canceled calls or false alarms and duplicated records were also excluded.
+We used the [EMS dataset](https://data.cincinnati-oh.gov/Safety/Cincinnati-Fire-Incidents-CAD-including-EMS-ALS-BL/vnsz-a3wp) that includes all responses to heroin-related overdose incidents from the Cincinnati Fire Department between 2016 and 2020.
+Each incident record contains incident location information, including geospatial information, location address, a classification of a neighborhood in the city, time of the incident, and disposition of incident response.
+Data records regarding incidents outside of the study area, without geospatial information, and with unassociated disposition codes were excluded from this study.
+Records from canceled calls or false alarms and duplicated records were also excluded.
 
 ```{r heroin data, message=FALSE, warning=FALSE, class.source='fold-show'}
 
@@ -113,7 +135,10 @@ heroin <- heroin %>%
 
 ```
 
-In addition, we used [Homeland Infrastructure Foundation-Level Data (HIFLD)]( https://hifld-geoplatform.opendata.arcgis.com/maps/geoplatform::hospitals/about) and [Substance Abuse and Mental Health Services Administration (SAMHSA) data](https://dpt2.samhsa.gov/treatment/directory.aspx) for 2015–2020 to obtain information about available healthcare services, such as hospitals, opioid treatment programs, and buprenorphine prescribing physicians, etc. We filtered data only for Cincinnati in the HIFLD dataset. The SAMHSA data were geocoded manually to get its location information first before reading into R. 
+In addition, we used [Homeland Infrastructure Foundation-Level Data (HIFLD)](https://hifld-geoplatform.opendata.arcgis.com/maps/geoplatform::hospitals/about) and [Substance Abuse and Mental Health Services Administration (SAMHSA) data](https://dpt2.samhsa.gov/treatment/directory.aspx) for 2015--2020 to obtain information about available healthcare services, such as hospitals, opioid treatment programs, and buprenorphine prescribing physicians, etc.
+
+We filtered data only for Cincinnati in the HIFLD dataset.
+The SAMHSA data were geocoded manually to get its location information first before reading into R.
 
 ```{r medical resource data, message=FALSE, warning=FALSE, class.source='fold-show'}
 
@@ -131,7 +156,8 @@ rehab <- rehab %>%
 
 ```
 
-Furthermore, we included the [crime rate data](https://data.cincinnati-oh.gov/safety/PDI-Police-Data-Initiative-Crime-Incidents/k59e-2pvf) from the Cincinnati Police Department between 2016 and 2020. Specific crimes were selected for inclusion in analyses based on having been identified in the literature as a spatial risk factor for drug overdose or substance use behavior or for having a theoretical relationship with drug overdose. 
+Furthermore, we included the [crime rate data](https://data.cincinnati-oh.gov/safety/PDI-Police-Data-Initiative-Crime-Incidents/k59e-2pvf) from the Cincinnati Police Department between 2016 and 2020.
+Specific crimes were selected for inclusion in analyses based on having been identified in the literature as a spatial risk factor for drug overdose or substance use behavior or for having a theoretical relationship with drug overdose.
 
 ```{r crime data, message=FALSE, warning=FALSE, class.source='fold-show'}
 
@@ -148,7 +174,7 @@ crime <- crime %>%
 
 ```
 
-From the same data source, we included the [311 non-emergency service requests](https://data.cincinnati-oh.gov/Thriving-Neighborhoods/Cincinnati-311-Non-Emergency-Service-Requests/4cjh-bm8b) from 2016 to 2020. 
+From the same data source, we included the [311 non-emergency service requests](https://data.cincinnati-oh.gov/Thriving-Neighborhoods/Cincinnati-311-Non-Emergency-Service-Requests/4cjh-bm8b) from 2016 to 2020.
 
 ```{r 311 complaints data, warning=FALSE, message=FALSE, class.source='fold-show'}
 
@@ -163,7 +189,11 @@ complaints <- complaints %>%
 
 ```
 
-The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations and public parks) are also important. Public restrooms are associated with people who inject drugs (PWID) because many people use drugs in these spaces.Pharmacies represent an important access variable for several reasons. During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels. All of these data were queried from OpenStreetMap and preprocessed in QGIS (fixing geometry, creating spatial indices, and  unioning point with polygon data pieces)
+The connection between substance use and built environment variables (access to public restrooms, access to pharmacies, and driving distance to services, defined in our study as fast-food restaurants, gas stations and public parks) are also important.
+Public restrooms are associated with people who inject drugs (PWID) because many people use drugs in these spaces.Pharmacies represent an important access variable for several reasons. 
+During the initial wave of the overdose crisis, pharmaceutical prescriptions, either legitimate, diverted, or potentially inappropriate, fed the opioid supply. 
+In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels. 
+All of these data were queried from OpenStreetMap and preprocessed in QGIS (fixing geometry, creating spatial indices, and unioning point with polygon data pieces)
 
 ```{r built environment data, warning=FALSE, message=FALSE, class.source='fold-show'}
 # gas station
@@ -179,7 +209,11 @@ parks <- st_read(here("data", "public", "parks.geojson")) %>% st_transform("EPSG
 pharmacy <- st_read(here("data","public", "pharmacy.geojson")) %>% st_transform("EPSG:3735") %>% st_centroid()
 ```
 
-To identify demographic and sociographic characteristics corresponding to the EMS dataset, we utilized the ACS data for 2016 – 2020. We downloaded demographic information for each census tract, including total population, gender, adult population size, and race/ethnicity. The ACS data also included socioeconomic characteristics of each census tract, such as education, income, and poverty. For each census tract, we computed the population aged between 25 and 54 (since this is the age group most vulnerable to opioid overdose), gender ratio, minority popultion ratio, percentage poverty, and percentage of population with a bachelor's degree. Note that the boundary of Cincinnati does not fully contain several census tracts and therefore we have tried our best to include tracts within Hamilton county that mostly fall within Cincinnati.  
+To identify demographic and sociographic characteristics corresponding to the EMS dataset, we utilized the ACS data for 2016 -- 2020.
+We downloaded demographic information for each census tract, including total population, gender, adult population size, and race/ethnicity.
+The ACS data also included socioeconomic characteristics of each census tract, such as education, income, and poverty.
+For each census tract, we computed the population aged between 25 and 54 (since this is the age group most vulnerable to opioid overdose), gender ratio, minority popultion ratio, percentage poverty, and percentage of population with a bachelor's degree.
+Note that the boundary of Cincinnati does not fully contain several census tracts and therefore we have tried our best to include tracts within Hamilton county that mostly fall within Cincinnati.
 
 ```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE, class.source='fold-show'}
 
@@ -230,34 +264,33 @@ cincinnati20 <- cincinnati20 %>%
 
 ```
 
-The table below summarizes all of our predictor variables in this study. 
+The table below summarizes all of our predictor variables in this study:
 
-| Variable Name                          | Source       | 
-| :----------:                           | :----------: |  
-| **Medical Service**                    |              |
-| Hospital                               | Homeland Infrastructure Foundation-Level Data |
-| Rehabilitation Center                  | Substance Abuse and Mental Health Services Administration |
-| **Built Environment**                  |                     |
-| Crime Rate                             | Open Data Cincinnati    |
-| 311 complaints                         | Open Data Cincinnati     |
-| Gas station                            | OSM     |
-| Public parks                           | OSM    |
-| Fast food restaurants                  | OSM    |
-| Pharmacies                             | OSM     |
-| **Socio-demographic Characteristics**  |             |
-| Population aged between 25 and 54      | ACS |
-| Gender ratio                           | ACS     |
-| White over minority ratio              | ACS     |
-| Population with a Bachelor's degree    | ACS     |
-| Median household income                | ACS     |
-| Population under poverty line          | ACS     |
-| Median Household Income                | ACS     |
+|             Variable Name             |                          Source                       |
+|:----------------------------------:   |:----------------------------------:                   |
+|          **Medical Service**          |                                                       |
+|               Hospital                |       Homeland Infrastructure Foundation-Level Data   |
+|         Rehabilitation Center         | Substance Abuse and Mental Health Services Administration |
+|         **Built Environment**         |                                                       |
+|              Crime Rate               |                   Open Data Cincinnati                |
+|            311 complaints             |                   Open Data Cincinnati                |
+|              Gas station              |                            OSM                        |
+|             Public parks              |                            OSM                        |
+|         Fast food restaurants         |                            OSM                        |
+|              Pharmacies               |                            OSM                        |
+| **Socio-demographic Characteristics** |                                                       |
+|   Population aged between 25 and 54   |                            ACS                        |
+|             Gender ratio              |                            ACS                        |
+|       White over minority ratio       |                            ACS                        |
+|  Population with a Bachelor's degree  |                            ACS                        |
+|        Median household income        |                            ACS                        |
+|     Population under poverty line     |                            ACS                        |
+|        Median Household Income        |                            ACS                        |
 
 
 # Poission Regression
 
-As part of our exploratory analysis, we first ran a poisson regression using number of 
-This requires us to 
+As part of our exploratory analysis, we first ran a poisson regression using number of This requires us to
 
 ```{r create fishnet, warning=FALSE, message=FALSE}
 fishnet <- st_make_grid(cincinnati,
@@ -281,7 +314,6 @@ ggplot() +
         panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
         )
 ```
-
 
 ```{r splitting train and test, warning=FALSE, message=FALSE}
 
@@ -458,7 +490,6 @@ plot2 <- ggplot() +
 plot1 + plot2 + plot3
 ```
 
-
 ```{r heroin over crime and complaints，fig.height=6, fig.width=13}
 
 options(scipen=0)
@@ -506,7 +537,6 @@ plot1_2 <- ggplot() +
 
 plot1_1 + plot1_2
 ```
-
 
 
 ```{r cor plots, fig.height=6, fig.width=12}
@@ -611,11 +641,10 @@ rbind(Prediction19, Prediction20) %>%
 
 ```
 
-
-
 # Getis Ord Spatial Hotspot
 
-We first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps. The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized 
+We first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps.
+The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized
 
 ```{r add all heroin overdose to fishnet, warning=FALSE, message=FALSE}
 
@@ -652,7 +681,6 @@ labs(title = "Count of Heroin Overdose for the Fishnet") +
   theme(legend.key.size = unit(0.8, 'cm'), legend.text = element_text(size=6))
 ```
 
-
 ```{r global moran's I, warning=FALSE, message=FALSE}
 
 coords <-  st_coordinates(heroin_net %>% st_centroid()) 
@@ -678,9 +706,13 @@ theme(plot.subtitle = element_text(size = 9,face = "italic"),
 
 ```
 
-The global spatial clustering analysis yields only one statistic to describe the overall point pattern across the whole study area, it does not identify where the local clusters or spatial outliers are. To determine which areas are similar or different from the neighboring areas, we performed a local spatial analysis. Local indicators of spatial association (LISA) decompose global indicators into the contributions of individual observations to identify local cluster patterns or spatial outliers 
+The global spatial clustering analysis yields only one statistic to describe the overall point pattern across the whole study area, it does not identify where the local clusters or spatial outliers are.
+To determine which areas are similar or different from the neighboring areas, we performed a local spatial analysis.
+Local indicators of spatial association (LISA) decompose global indicators into the contributions of individual observations to identify local cluster patterns or spatial outliers
 
-We then used the Getis-Ord Gi* hotspot statistic to identify and map clusters (i.e., grids with high overdose rates surrounded by grids with high rates). Each hotspot identified is statistically significant at the p<0.05 level. For estimating the Getis-Ord clusters, we used the queen’s criterion to define our spatial weights matrix.
+We then used the Getis-Ord Gi\* hotspot statistic to identify and map clusters (i.e., grids with high overdose rates surrounded by grids with high rates).
+Each hotspot identified is statistically significant at the p\<0.05 level.
+For estimating the Getis-Ord clusters, we used the queen's criterion to define our spatial weights matrix.
 
 ```{r local moran I, warning=FALSE, message=FALSE}
 
@@ -738,7 +770,9 @@ heroin_net <- gi_hot_spots %>%
   left_join(heroin_net, ., by = "uniqueID")
 ```
 
-The univariate LISA cluster map shows seven types of spatial association determined based on heroin-related overdose incident rate within a block and its neighboring blocks. If a grid has a high heroin incident rate with neighboring grids of high heroin incident rates, it was determined as a hot spot. At the same scheme, if a grid shows a low heroin incident rate with neighboring grids of low heroin incident rates, it was classified as a cold spot. 
+The univariate LISA cluster map shows seven types of spatial association determined based on heroin-related overdose incident rate within a block and its neighboring blocks.
+If a grid has a high heroin incident rate with neighboring grids of high heroin incident rates, it was determined as a hot spot.
+At the same scheme, if a grid shows a low heroin incident rate with neighboring grids of low heroin incident rates, it was classified as a cold spot.
 
 # Logistic Regression
 
@@ -874,6 +908,91 @@ heroin_net_long %>%
 ```
 
 
+```{r anova figure, fig.height=10, fig.width=15, message=FALSE, warning=FALSE}
+
+anova_dataset <- heroin_net %>% st_drop_geometry() %>% 
+                    dplyr::select(hotspot, Crimecount, Complaintscount, pharm.nn, hospital.nn, fast.nn, fuel.nn, rehab.nn, parks.nn, pop25_54, MedHHInc, MF_ratio, race_ratio, pctPoverty, pctBachelor)
+
+anova_dataset %>%
+  gather(Variable, value, -hotspot) %>%
+    ggplot(aes(as.character(hotspot), value, fill=as.character(hotspot))) + 
+      geom_bar(position = "dodge", stat = "summary", fun = "mean") + 
+      facet_wrap(~Variable, scales = "free", ncol = 5, labeller= labeller(Variable = c(
+        `Complaintscount` = "Complaints",
+        `Crimecount` = "Crime",
+        `fast.nn` = "Distance to Fast Food",
+        `fuel.nn` = "Distance to Gas Stations",
+    `hospital.nn` = "Distance to Hospital",
+    `MedHHInc` = "Median Household Income",
+    `MF_ratio` = "Gender Ratio",
+    `parks.nn` = "Distance to Parks",
+    `pctBachelor` = "Percent Bachelor's Degree",
+    `pctPoverty` = "Poverty Rate",
+    `pharm.nn` = "Distance to Pharmacy",
+    `pop25_54` = "Population 25_54", 
+    `rehab.nn` = "Distance to Rehab Center",
+    `race_ratio` = "Racial Majority over Minority"))) +
+      scale_fill_manual(values = c("#000004",  "#BB3754")) +
+      labs(x="Hotspot", y="Value", 
+           title = "Feature Associations with the Likelihood of Overdose Hotspot") +
+      theme(legend.position = "none") +
+    theme(plot.subtitle = element_text(size = 12,face = "italic"),
+        plot.title = element_text(size = 18, face = "bold"), 
+        axis.text.x=element_text(size=10),
+        axis.text.y=element_text(size=10), 
+        axis.title=element_text(size=9), 
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth =0.8))
+```
+
+
+
+We further conducted ANOVA test for all numeric features to see if there’s a significant difference in mean age, for example, across people who take and did not take the credit. 
+The result is in concur with our expectations: all numeric variables are significant predictors.
+
+
+```{r anova test, message=FALSE, warning=FALSE}
+
+anova_var <- c("Crimecount", "Complaintscount", "pharm.nn", "hospital.nn", "fast.nn", "fuel.nn", "rehab.nn", "parks.nn", "pop25_54", "MedHHInc", "MF_ratio", "race_ratio", "pctPoverty", "pctBachelor")
+
+anova_results <- data.frame(
+                            Df = integer(), 
+                            Sum_Sq = numeric(), 
+                            Mean_Sq = numeric(), 
+                            F_value = numeric(), 
+                            P_Value = numeric(), stringsAsFactors = FALSE)
+
+new_names <- c("Crimecount" = "Crime",
+                "Complaintscount" = "Complaints",
+                "pharm.nn" = "Distance to Pharmacy",
+                "hospital.nn" = "Distance to Hospital",
+                "fast.nn" = "Distance to Fast Food",
+                "fuel.nn" = "Distance to Gas Stations",
+                "rehab.nn" = "Distance to Rehab Center", 
+                "parks.nn" = "Distance to Parks", 
+                "pop25_54" = "Population 25_54", 
+                "MedHHInc" = "Median Household Income",
+                "MF_ratio" = "Gender Ratio",
+                "race_ratio" = "Racial Majority over Minority",
+                "pctPoverty" = "Poverty Rate", 
+                "pctBachelor" = "Percent Bachelor's Degree"
+               )
+
+for (var in anova_var) {
+  anova_result <- aov(anova_dataset[[var]] ~ anova_dataset$hotspot)
+  summary_data <- summary(anova_result)[[1]][, c("Df", "Sum Sq", "Mean Sq", "F value", "Pr(>F)")][1:1, ]
+  anova_results <- rbind(anova_results, summary_data)
+}
+
+rownames(anova_results) <- new_names
+
+anova_results %>% 
+ kable() %>% 
+ kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>% 
+    footnote(general_title = "\n")
+
+```
+
 
 ## Simpile Logit
 
@@ -899,10 +1018,12 @@ coefficients_table %>%
   dplyr::select(-significance, -`Pr(>|z|)`) %>% 
   kable(align = "r") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
-  footnote(general_title = "\n", general = "Table 1")
+  footnote(general_title = "\n")
 ```
 
+
 ## Logit with CV
+
 ```{r logit function}
 
 logitCV <- function(dataset, id, dependentVariable, indVariables) {
@@ -913,8 +1034,7 @@ logitCV <- function(dataset, id, dependentVariable, indVariables) {
   for (i in cvID_list) {
     
     thisFold <- i
-    cat("This hold out fold is", thisFold, "\n")
-    
+
     fold.train <- filter(dataset, dataset[[id]] != thisFold) %>% as.data.frame() %>% 
       dplyr::select(id, geometry, all_of(indVariables),
                     all_of(dependentVariable))
@@ -925,7 +1045,7 @@ logitCV <- function(dataset, id, dependentVariable, indVariables) {
     form_parts <- paste0(dependentVariable, " ~ ", paste0(indVariables, collapse = "+"))
     form <- as.formula(form_parts)
     regression <- glm(form, data = fold.train %>%
-                        dplyr::select(-geometry, -id), family="binomial" (link="logit"))
+                        dplyr::select(-geometry, -id),  family="binomial" (link="logit"))
     
     thisPrediction <-
       mutate(fold.test, Prediction = predict(regression, fold.test, type = "response"))
@@ -940,7 +1060,57 @@ logitCV <- function(dataset, id, dependentVariable, indVariables) {
 ```
 
 
-```{r logistic with CV}
+```{r cm function}
+
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='black')
+  text(195, 435, '0', cex=1.2)
+  rect(250, 430, 340, 370, col="#BB3754")
+  text(295, 435, '1', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col="#BB3754")
+  rect(250, 305, 340, 365, col='black')
+  text(140, 400, '0', cex=1.2, srt=90)
+  text(140, 335, '1', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+```
+
+
+```{r logistic with CV, warning=FALSE, message=FALSE}
 
 reg.vars <- c("Crimecount", "Complaintscount", "pharm.nn", "hospital.nn", "fast.nn", "fuel.nn", "rehab.nn", "parks.nn", "pop25_54", "MedHHInc", "MF_ratio", "race_ratio", "pctPoverty", "pctBachelor")
 
@@ -957,12 +1127,12 @@ kitchensink.logit.cv <- kitchensink.logit.cv %>%
   mutate(hotspot = as.factor(hotspot))
 
 
+cm_basic <- caret::confusionMatrix(kitchensink.logit.cv$hotspot, kitchensink.logit.cv$PredictionCat, 
+                       positive = "1")
 
-mosaicplot(caret::confusionMatrix(kitchensink.logit.cv$hotspot, kitchensink.logit.cv$PredictionCat, 
-                       positive = "1")$table, color=c("#DBC2CF","#9FA2B2"), main = "Mosaic Plot for Original Confusion Matrix",
-           xlab = "Prediction", ylab = "Reference")
+draw_confusion_matrix(cm_basic)
+
 ```
-
 
 # Principal Component Analysis (PCA)
 
@@ -970,30 +1140,64 @@ mosaicplot(caret::confusionMatrix(kitchensink.logit.cv$hotspot, kitchensink.logi
 
 PCA is a dimension reduction technique that is commonly used to reduce the number of variables used in analyses while preserving the information from them.
 
-```{r determine pc}
+```{r determine pc, warning=FALSE, message=FALSE}
 
 pca_heroin <- heroin_net %>% 
   st_drop_geometry() %>% 
-  select(Crimecount, Complaintscount, pharm.nn, hospital.nn, fast.nn, fuel.nn, rehab.nn, parks.nn, pop25_54, MedHHInc, MF_ratio, race_ratio, pctPoverty, pctBachelor)
+  dplyr::select(Crimecount, Complaintscount, pharm.nn, hospital.nn, fast.nn, fuel.nn, rehab.nn, parks.nn, pop25_54, MedHHInc, MF_ratio, race_ratio, pctPoverty, pctBachelor)
 
 pca_heroin <- na.omit(pca_heroin)
 pc <- prcomp(pca_heroin,
              center = TRUE,
             scale. = TRUE)
-
-summary(pc)
-print(pc)
 ```
 
-```{r pca viz}
+The first approach of the list is the scree plot. It is used to visualize the importance of each principal component and can be used to determine the number of principal components to retain. 
 
-fviz_eig(pc, addlabels = TRUE)
-fviz_pca_var(pc, col.var = "black")
-fviz_cos2(pc, choice = "var", axes = 1:7)
+```{r pca viz1, warning=FALSE, message=FALSE}
+
+fviz_eig(pc, addlabels = TRUE, barfill = "#BB3754", barcolor = "transparent", xlab = "Principal Components", choice = "eigenvalue")
 
 ```
 
-```{r compute pca}
+The code above computed the square cosine value for each variable with respect to the first seven principal components. 
+
+From the illustration below, cereals, gender ratio.....are top four variables with the highest cos2, hence contributing the most to PC1 and PC2.
+
+
+```{r pca viz2,  message=FALSE, warning=FALSE}
+
+fviz_cos2(pc, choice = "var", axes = 1:7) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_bar(stat = "identity", fill = "#BB3754", color = "transparent")
+
+```
+
+
+With the biplot, it is possible to visualize the similarities and dissimilarities between the samples, and further shows the impact of each attribute on each of the principal components.
+
+The length of the arrow represents the magnitude or strength of the contribution of the corresponding variable to the specific principal component.
+The color of the arrow represents the relative contribution of the variable to the principal component. Darker colors typically indicate larger contributions.
+
+Long Arrow, Light Color:
+Interpretation: The length of the arrow indicates a strong contribution, but the lighter color suggests that the contribution might be less significant compared to other variables.
+
+Short Arrow, Dark Color:
+Interpretation: Despite the arrow being short, the dark color indicates that the variable has a relatively strong contribution compared to its length. It might not be a major driver, but its impact is notable.
+
+
+```{r pca viz3, fig.height=6, fig.width=9, message=FALSE, warning=FALSE}
+
+fviz_pca_var(pc, col.var = "cos2", repel = TRUE, 
+             arrowsize = 1,  ggtheme = theme_minimal(), gradient.cols = c("black", "#BB3754"),) + ggtitle("Biplot Combind with Contribution")
+
+
+```
+
+
+
+```{r compute pca, message=FALSE, warning=FALSE}
 
 pca_net <- heroin_net %>% 
   mutate(pc1 = Crimecount * pc$rotation[1] + Complaintscount * pc$rotation[2] + pharm.nn * pc$rotation[3] + hospital.nn * pc$rotation[4] + fast.nn * pc$rotation[5] +  fuel.nn * pc$rotation[6] + rehab.nn * pc$rotation[7] + parks.nn *  pc$rotation[8] + pop25_54 * pc$rotation[9] + MedHHInc * pc$rotation[10] + MF_ratio * pc$rotation[11] + race_ratio * pc$rotation[12] +  pctPoverty * pc$rotation[13] + pctBachelor * pc$rotation[14]) %>% 
@@ -1009,12 +1213,11 @@ pca_net <- heroin_net %>%
 
 ## PCA Logistic Regression
 
-We estimated logistic regressions with an autologistic term to predict if a grid was in a hotspot (0/1) as identified by the Getis-Ord Gi* statistic as the outcome and the components derived from the PCA as the explanatory variables.
+We estimated logistic regressions with an autologistic term to predict if a grid was in a hotspot (0/1) as identified by the Getis-Ord Gi\* statistic as the outcome and the components derived from the PCA as the explanatory variables.
 
-```{r using pca in logistic regression}
+```{r using pca in logistic regression, message=FALSE, warning=FALSE}
 
 reg.vars <- c("pc1", "pc2", "pc3", "pc4", "pc5", "pc6", "pc7")
-
 
 pca.logit.cv <- logitCV (
   dataset = pca_net,
@@ -1027,18 +1230,49 @@ pca.logit.cv <- pca.logit.cv %>%
   mutate(PredictionCat  = as.factor(ifelse(pca.logit.cv$Prediction > 0.5 , 1, 0))) %>% 
   mutate(hotspot = as.factor(hotspot))
 
-caret::confusionMatrix(pca.logit.cv$hotspot, pca.logit.cv$PredictionCat, 
+cm_pca <- caret::confusionMatrix(pca.logit.cv$hotspot, pca.logit.cv$PredictionCat, 
                        positive = "1")
+
+draw_confusion_matrix(cm_pca)
+
+```
+
+```{r using pca in logistic regression with neighborhood, message=FALSE, warning=FALSE}
+
+neighborhood <- st_read(here("data", "public", "neighborhood.geojson")) %>% st_transform("EPSG:3735") %>% st_zm()
+pca_net <- pca_net %>%
+  left_join(net_centroid %>% dplyr::select(uniqueID) %>% 
+               st_intersection(neighborhood %>% dplyr::select(SNA_NAME)) %>% 
+              st_drop_geometry(), by = "uniqueID") %>% 
+  mutate(SNA_NAME = ifelse(is.na(SNA_NAME), "NOT APPLICABLE", SNA_NAME))
+
+
+pca.logit.cv.neigh <- logitCV (
+  dataset = pca_net,
+  id = "SNA_NAME",
+  dependentVariable = "hotspot",
+  indVariables = reg.vars) %>%
+    dplyr::select(SNA_NAME = SNA_NAME, hotspot, Prediction, geometry)
+
+pca.logit.cv.neigh <- pca.logit.cv.neigh %>% 
+  mutate(PredictionCat  = as.factor(ifelse(pca.logit.cv.neigh$Prediction > 0.5 , 1, 0))) %>% 
+  mutate(hotspot = as.factor(hotspot))
+
+cm_pca_neigh <- caret::confusionMatrix(pca.logit.cv.neigh$hotspot, pca.logit.cv.neigh$PredictionCat, 
+                       positive = "1")
+
+draw_confusion_matrix(cm_pca_neigh)
 ```
 
 
-```{r ROC curve}
+```{r ROC curve, fig.height=6, fig.width=11, message=FALSE, warning=FALSE}
 
-ggplot(pca.logit.cv, aes(d = as.numeric(hotspot), m = Prediction)) +
-  geom_roc(n.cuts = 50, labels = FALSE, colour = "#2E4756") +
-    labs(title = "ROC Curve for Improved Model") +
+plot7 <- ggplot(pca.logit.cv, aes(d = as.numeric(hotspot), m = Prediction)) +
+  geom_roc(n.cuts = 50, labels = FALSE, colour = "black") +
+    labs(title = "ROC Curve for Logistic Regression Model using PCA", 
+         subtitle = "Random Cross Validation") +
   style_roc(theme = theme_grey) +
-  geom_abline(slope = 1, intercept = 0, size = 1.5, color = "#DBC2CF") +
+  geom_abline(slope = 1, intercept = 0, size = 1.5, color = "#BB3754") +
   theme(plot.subtitle = element_text(size = 9,face = "italic"),
         plot.title = element_text(size = 12, face = "bold"), 
         axis.text.x=element_text(size=8),
@@ -1046,11 +1280,82 @@ ggplot(pca.logit.cv, aes(d = as.numeric(hotspot), m = Prediction)) +
         axis.title=element_text(size=9), 
         panel.background = element_blank(),
         panel.border = element_rect(colour = "grey", fill=NA, linewidth =0.8))
+
+plot8 <- ggplot(pca.logit.cv.neigh, aes(d = as.numeric(hotspot), m = Prediction)) +
+  geom_roc(n.cuts = 50, labels = FALSE, colour = "black") +
+    labs(title = "ROC Curve for Logistic Regression Model using PCA", 
+         subtitle = "Spatial LOGO Cross Validation") +
+  style_roc(theme = theme_grey) +
+  geom_abline(slope = 1, intercept = 0, size = 1.5, color = "#BB3754") +
+  theme(plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"), 
+        axis.text.x=element_text(size=8),
+        axis.text.y=element_text(size=8), 
+        axis.title=element_text(size=9), 
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth =0.8))
+
+plot7 + plot8
 ```
+
+```{r mapping error, message=FALSE, warning=FALSE, fig.height=6, fig.width=11}
+
+plot9 <- pca.logit.cv %>%
+  filter(is.na(Prediction) == FALSE) %>% 
+   mutate(result = case_when(
+   PredictionCat==0 & hotspot==0 ~ "Accurate",
+   PredictionCat==1 & hotspot==1 ~"Accurate",
+   PredictionCat==0 & hotspot==1 ~"Problematic",
+   TRUE ~ "Inaccurate"
+  )) %>% 
+  ggplot() +
+  geom_sf(aes(fill=result), color="transparent")+
+  scale_fill_manual(values = c("black","#FFC000", "#BB3754"), name = "Result") +
+  labs(title = "Mapping Error", 
+         subtitle = "Random Cross Validation") +
+    theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+  
+
+plot10 <- pca.logit.cv.neigh %>%
+  filter(is.na(Prediction) == FALSE) %>% 
+   mutate(result = case_when(
+   PredictionCat==0 & hotspot==0 ~ "Accurate",
+   PredictionCat==1 & hotspot==1 ~"Accurate",
+   PredictionCat==0 & hotspot==1 ~"Problematic",
+   TRUE ~ "Inaccurate"
+  )) %>% 
+  ggplot() +
+  geom_sf(aes(fill=result), color="transparent")+
+  scale_fill_manual(values = c("black", "#FFC000", "#BB3754"), name = "Result") +
+  labs(title = "Mapping Error", 
+         subtitle = "Spatial LOGO Validation") +
+    theme(axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks =element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.subtitle = element_text(size = 9,face = "italic"),
+        plot.title = element_text(size = 12, face = "bold"),
+        panel.background = element_blank(),
+        panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
+        )
+   
+plot9 + plot10 
+```
+
 
 # KDE Validation
 
-```{r KDE 1000 radii}
+```{r KDE 1000 radii,  message=FALSE, warning=FALSE}
 
 heroin_ppp <- as.ppp(st_coordinates(heroin), W = st_bbox(heroin_net))
 heroin_KD.1000 <- spatstat.explore::density.ppp(heroin_ppp, 1000)
@@ -1060,7 +1365,7 @@ heroin_KD.df <- data.frame(rasterToPoints(mask(raster(heroin_KD.1000), as(cincin
 ggplot(data=heroin_KD.df, aes(x=x, y=y)) +
   geom_raster(aes(fill=layer)) + 
   coord_sf(crs=st_crs(heroin_net)) + 
-  scale_fill_viridis(option = "magma", name="Density") +
+  scale_fill_viridis(option = "rocket", name="Density") +
   labs(title = "Kernel Density of Heroin 1000ft Radii") +
     theme(axis.text.x=element_blank(),
         axis.text.y=element_blank(),
@@ -1074,7 +1379,9 @@ ggplot(data=heroin_KD.df, aes(x=x, y=y)) +
         )
 ```
 
-```{r comparison}
+
+
+```{r comparison, message=FALSE, warning=FALSE}
 
 heroin_KDE_sum <- as.data.frame(heroin_KD.1000) %>%
   st_as_sf(coords = c("x", "y"), crs = st_crs(heroin_net)) %>%
@@ -1106,10 +1413,10 @@ rbind(heroin_KDE_sf, heroin_risk_sf) %>%
   ggplot() +
     geom_sf(aes(fill = Risk_Category), colour = NA) +
     facet_wrap(~label, ) +
-    scale_fill_viridis(option = "magma", discrete = TRUE, name = "Risk Category") +
-    #labs(title="Comparison of Kernel Density and Risk Predictions",
-         #subtitle="2021 robbery risk predictions; 2022 robberies") + 
-  theme(axis.text.x=element_blank(),
+    scale_fill_viridis(option = "rocket", discrete = TRUE, name = "Risk Category") +
+    labs(title="Comparison of Kernel Density and Risk Predictions") + 
+  theme(legend.position="bottom",
+    axis.text.x=element_blank(),
         axis.text.y=element_blank(),
         axis.ticks =element_blank(),
         axis.title.x = element_blank(),
@@ -1120,6 +1427,8 @@ rbind(heroin_KDE_sf, heroin_risk_sf) %>%
         panel.border = element_rect(colour = "grey", fill=NA, size=0.8)
         )
 ```
+
+
 
 # Multi Criteria Analysis
 
@@ -1154,8 +1463,6 @@ risk_score <- heroin_net %>%
   st_as_sf()
   
 
-neighborhood <- st_read(here("data", "public", "neighborhood.geojson")) %>% st_transform('ESRI:102728') %>% st_zm()
-net_centroid <- st_centroid(heroin_net) %>% st_transform('ESRI:102728')
 risk_score <- risk_score %>%
   left_join(net_centroid %>% dplyr::select(uniqueID) %>% 
                st_intersection(neighborhood %>% dplyr::select(SNA_NAME)) %>% 
@@ -1168,7 +1475,9 @@ risk_score <- risk_score %>%
 
 ```{r map risk}
 
-pal <- colorBin(palette = "viridis", 
+colors <- rev(viridis::viridis(6, option = "rocket"))
+
+pal <- colorBin(palette = colors, 
                 domain = risk_score$score, 
                 bins = c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7)) 
 
@@ -1188,18 +1497,25 @@ leaflet <- risk_score %>%
   addLegend(position = "bottomright",
             pal = pal,
             values = ~risk_score, # change the name of the parameter after ~
-            title = "Risk Score") # change the name of the legend 
+            title = "Risk Score",
+            opacity = 1) # change the name of the legend 
 
 leaflet
 
 ```
 
+# References
 
-# References 
+Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H.
+(2022).
+Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio.
+BMC public health, 22(1), 1-12.
 
-Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H. (2022). Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio. BMC public health, 22(1), 1-12.
+Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J.
+(2023).
+Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.
 
-Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J. (2023). Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.
-
-Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L. (2023). Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling. American Journal of Criminal Justice, 1-25.
-
+Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L.
+(2023).
+Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
+American Journal of Criminal Justice, 1-25.
