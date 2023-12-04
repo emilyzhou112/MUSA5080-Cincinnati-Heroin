@@ -64,7 +64,10 @@ Section four is the main part of this study, where we iclude all built environme
 Section five applies principal component analysis to reduce colinerity and include only half of the principal components into the model.
 Section six validates the accuracy of this model against a kernel density estimation while the last section constructs the risk terrain map.
 
-The conceptualization and methodologies of this study were drawn in part from: - Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio - Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021 - Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
+The conceptualization and methodologies of this study were drawn in part from: 
+- Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio 
+- Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021 
+- Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
 
 The study data and code are available in public a GitHub repository linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin).
 
@@ -195,7 +198,7 @@ During the initial wave of the overdose crisis, pharmaceutical prescriptions, ei
 In addition, naloxone (a medication to reverse an opioid overdose) is available at pharmacies without a prescription, although this provision may vary by neighborhood socio-demographic levels. 
 All of these data were queried from OpenStreetMap and preprocessed in QGIS (fixing geometry, creating spatial indices, and unioning point with polygon data pieces)
 
-```{r built environment data, warning=FALSE, message=FALSE, class.source='fold-show'}
+```{r built environment data, warning=FALSE, message=FALSE}
 # gas station
 fuel <- st_read(here("data", "public", "fuel.geojson")) %>% st_transform("EPSG:3735")
 
@@ -215,7 +218,7 @@ The ACS data also included socioeconomic characteristics of each census tract, s
 For each census tract, we computed the population aged between 25 and 54 (since this is the age group most vulnerable to opioid overdose), gender ratio, minority popultion ratio, percentage poverty, and percentage of population with a bachelor's degree.
 Note that the boundary of Cincinnati does not fully contain several census tracts and therefore we have tried our best to include tracts within Hamilton county that mostly fall within Cincinnati.
 
-```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE, class.source='fold-show'}
+```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
 
 cincinnati20 <- get_acs(geography = "tract", 
           variables = c(
@@ -290,7 +293,7 @@ The table below summarizes all of our predictor variables in this study:
 
 # Poission Regression
 
-As part of our exploratory analysis, we first ran a poisson regression using number of This requires us to
+As part of our exploratory analysis, we ran a poisson regression using only the number of crime incidents and the number of 311 complaints as our predictor variables. Since heroin overdose incident is not a phenomenon that varies across administrative units, but one varying smoothly across the landscape, we would need to aggregate these point-level data into a lattice grid of cells. The code below generates a 500 by 500 meters (820 feet) fishnet for Cincinnati to achieve this goal.
 
 ```{r create fishnet, warning=FALSE, message=FALSE}
 fishnet <- st_make_grid(cincinnati,
@@ -314,6 +317,8 @@ ggplot() +
         panel.border = element_rect(colour = "grey", fill=NA, linewidth=0.8)
         )
 ```
+
+We would like to compare across both space and time, and so we divide the heroin dataset into one training set and two testing sets. The training set contains incidents from 2016 to 2018 while the testing sets contain incidents from 2019 and 2020 respectively. Since each individual year has well enough observations of heroin-overdose incidents, separating the testing set into 2019 and 2020 allows us to understand how COVID-19 plays a role in affecting drug overdose rate. We also separate the crime incident data and the 311 complaints data into respective year groups so that we could aggregate them into the fishnet. 
 
 ```{r splitting train and test, warning=FALSE, message=FALSE}
 
@@ -340,6 +345,7 @@ complaint20 <- complaints%>%
 
 ```
 
+The following two code chunks perform all the necessary tasks to prepare our training and testing datasets by aggregating heroin-incidents, crime incidents, and 311 complaints all into the same spatial unit, in this case, the fishnet. 
 
 ```{r preparing training set, warning=FALSE, message=FALSE}
 
@@ -435,6 +441,7 @@ heroin20_net <- heroin20_net %>%
   mutate(Complaintscount = ifelse(is.na(Complaintscount), 0, Complaintscount))
 ```
 
+We performed some data visualization work to see if there are any differences between heroin-overdose incidents over year. We found that the distribution of these incidents are pretty consistent between 2016-2018 and 2019, with the majority of incidents significantly clustered in south Cincinnati. However, in 2020, despite that this overdose cluster still remain, overdose incidents became more disperse. We may see some small, emerging clusters of high overdose incidents scattered around the city. 
 
 ```{r is there a difference between heroin incidents over year, fig.height=6, fig.width=15, warning=FALSE, message=FALSE}
 
@@ -490,6 +497,8 @@ plot2 <- ggplot() +
 plot1 + plot2 + plot3
 ```
 
+We created heat maps of heroin-overdose incidents from 2016 to 2018 and overlayed crime incidents and 311 complaints above. Based on the visualization, we assume crime and 311 complaints to be strong predictors of overdose risk as places of high overdose incidents align perfectly with places with higher crime rate and more complaints. Yet, it is also pretty evident that crime incidents are correlated with 311 complaints. 
+
 ```{r heroin over crime and complaints，fig.height=6, fig.width=13, warning=FALSE, message=FALSE}
 
 options(scipen=0)
@@ -538,6 +547,7 @@ plot1_2 <- ggplot() +
 plot1_1 + plot1_2
 ```
 
+Mapping the correlation between our predictor variables reveals that indeed, there's a strong, linear, and positive relationship between heroin-overdose incidents and crime as well as 311 complaints, though the relationships become weaker in 2020. We suspect that disruptions in the drug supply chain, changes in law enforcement priorities, as well as increase social isolation and mental health challenges during the pandemic might have contribute to the decrease in correlation between overall crime incidents and heroin overdose incidents in 2020. 
 
 ```{r cor plots, fig.height=6, fig.width=12, message=FALSE, warning=FALSE}
 
@@ -609,6 +619,7 @@ plot4 + plot5 + plot6
 
 ```
 
+We ran the Poisson regression and confirmed that crime incidents and 311 complaints are good at predicting heroin-overdose risk. The model is slightly better when used to predict 2020 data, but the difference is minimal. 
 
 ```{r running poission, warning=FALSE, message=FALSE}
 
@@ -641,7 +652,17 @@ rbind(Prediction19, Prediction20) %>%
 
 ```
 
+Here are our reflections up to this point:
+
+While there's significant associations between crime incidents, 311 complaints, and heroin-overdose incidents, building a model that relies solely on them to predict risk is simply not enough because substance abuse and overdose risks are complex phenomena influenced by various factors beyond just criminal activity. The geographical and environmental context, including the availability of treatment facilities, proximity to support networks, and neighborhood characteristics, also plays a crucial role in understanding overdose risks. Therefore, we must integrate more features showing built environment and local contexts into the model. 
+
+On top of that, Poisson regression is a traditional method used in geospatial risk model to predict the number (count) of discrete event, especially crime. However, in making decisions about how to alleviate the risk of particular medical or criminal incidence, we shouldn't just look at the number of accidents at an intersection in a day at a very specific place. Rather, we should flag areas in a city that are more vulnerable/risky than others. It is not wrong to care to focus on the number of incidence, but from a policy-making perspective, learning whether or not a place is risky would be more efficient, helpful, and straightforward in guiding decision making. In other words, stakeholders and the general public do not have to know *how many incidents happened at this place*, but *whether this place is risky* and therefore requires more attention. 
+
+
+
 # Getis Ord Spatial Hotspot
+
+We adapted this research workflow from...
 
 We first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps.
 The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized
