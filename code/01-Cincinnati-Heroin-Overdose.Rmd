@@ -658,16 +658,15 @@ While there's significant associations between crime incidents, 311 complaints, 
 
 On top of that, Poisson regression is a traditional method used in geospatial risk model to predict the number (count) of discrete event, especially crime. However, in making decisions about how to alleviate the risk of particular medical or criminal incidence, we shouldn't just look at the number of accidents at an intersection in a day at a very specific place. Rather, we should flag areas in a city that are more vulnerable/risky than others. It is not wrong to care to focus on the number of incidence, but from a policy-making perspective, learning whether or not a place is risky would be more efficient, helpful, and straightforward in guiding decision making. In other words, stakeholders and the general public do not have to know *how many incidents happened at this place*, but *whether this place is risky* and therefore requires more attention. 
 
-
-
 # Getis Ord Spatial Hotspot
 
-We adapted this research workflow from...
+We adapted this research workflow from Srinivasan, et al. (2023), who studied the risk factors for opioid overdose in Massachusetts. In its essence, Srinivasan, et al used principal component analysis to reduce colinerarity between predictor variables and ran a logistic regression to predict whether places in Massachusetts are within overdose hotspot or not. 
 
-We first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps.
-The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized
+To replicate their approach as much as possible, we first examined the spatial distribution of heroin-related incident rates using the Jenks natural breaks maps.
+The Jenks natural breaks maps use a nonlinear algorithm to create groups where within-group similarity is maximized, and between-group similarity is minimized. 
+The map shows at least one significant incidence cluster in south Cincinnati and several other smaller clusters surrounding that hotspot. 
 
-```{r add all heroin overdose to fishnet, warning=FALSE, message=FALSE}
+```{r jenks break, warning=FALSE, message=FALSE}
 
 heroin_net <- 
   dplyr::select(heroin) %>%  
@@ -677,12 +676,6 @@ heroin_net <-
          uniqueID = 1:n(), 
          cvID = sample(round(nrow(fishnet) / 24), 
                        size=nrow(fishnet), replace = TRUE))
-
-```
-
-
-```{r jenks break, warning=FALSE, message=FALSE}
-
 breaks <- classIntervals(heroin_net$countHeroin, n = 5, style = "jenks")
 
 ggplot() +
@@ -701,6 +694,8 @@ labs(title = "Count of Heroin Overdose for the Fishnet") +
   ) + 
   theme(legend.key.size = unit(0.8, 'cm'), legend.text = element_text(size=6))
 ```
+
+We validated our observation by checking the global moran's I under the hypothesis that heroin incidences are randomly distributed across space.  The figure below plot the frequency of 999 randomly permutated I under Monte Carlo simulation, which shows that our observed I is much higher than all of the randomly generated I’s. This validates the existence of spatial autocorrelation.
 
 ```{r global moran's I, warning=FALSE, message=FALSE}
 
@@ -727,13 +722,7 @@ theme(plot.subtitle = element_text(size = 9,face = "italic"),
 
 ```
 
-The global spatial clustering analysis yields only one statistic to describe the overall point pattern across the whole study area, it does not identify where the local clusters or spatial outliers are.
-To determine which areas are similar or different from the neighboring areas, we performed a local spatial analysis.
-Local indicators of spatial association (LISA) decompose global indicators into the contributions of individual observations to identify local cluster patterns or spatial outliers
-
-We then used the Getis-Ord Gi\* hotspot statistic to identify and map clusters (i.e., grids with high overdose rates surrounded by grids with high rates).
-Each hotspot identified is statistically significant at the p\<0.05 level.
-For estimating the Getis-Ord clusters, we used the queen's criterion to define our spatial weights matrix.
+Since the global spatial clustering analysis yields only one statistic to describe the overall point pattern across the whole study area, we have to use the Getis-Ord Gi\* hotspot statistic to identify and map clusters (i.e., grids with high overdose rates surrounded by grids with high rates). Below, each hotspot identified is statistically significant at the p\<0.1 level. For estimating the clusters, we used the queen's criterion to define our spatial weights matrix.
 
 ```{r local moran I, warning=FALSE, message=FALSE}
 
@@ -792,13 +781,13 @@ heroin_net <- gi_hot_spots %>%
   left_join(heroin_net, ., by = "uniqueID")
 ```
 
-The univariate LISA cluster map shows seven types of spatial association determined based on heroin-related overdose incident rate within a block and its neighboring blocks.
-If a grid has a high heroin incident rate with neighboring grids of high heroin incident rates, it was determined as a hot spot.
-At the same scheme, if a grid shows a low heroin incident rate with neighboring grids of low heroin incident rates, it was classified as a cold spot.
+The cluster map shows seven types of spatial association determined based on heroin-related overdose incident rate within a grid and its neighboring grids. If a grid has a high heroin incident rate with neighboring grids of high heroin incident rates, it was determined as a hot spot. At the same scheme, if a grid shows a low heroin incident rate with neighboring grids of low heroin incident rates, it was classified as a cold spot. Hotspots with p\<0.01 are considered as "Very hot", with p\<0.05 are considered as "Hot", with p\<0.1 are consiered as "Somewhat hot". All grids that fall into these three categories received a 1 for hotspot, otherwise, it gets a zero. 
 
 # Logistic Regression
 
 ## Built Environment Features
+
+We aggregated built environment features in addition to crime and 311 complaints into the fishnet of Cincinnati. For crime and complaints, we counted their number in each grid. For hospitals, rehabilitation centers, pharmacies, fast food restaurants, gas stations, and public parks, we calculated the average distance from the center of each grid to these locations. For demographic variables, we spatially joined tract level into the grids depending on which census tract each centroid of the grid fall into.   
 
 ```{r adding risk factors to net, warning=FALSE, message=FALSE}
 
@@ -883,6 +872,8 @@ heroin_net <- heroin_net %>%
   filter(is.na(pop25_54) == FALSE)
 ```
 
+Some exploratory data analysis were performed, including computing the correlation between all of our predictor variables and heroin incidence. The figure below shows that all of our predictor variables are correlated with heroin-overdose incidence, among which all of our nearest distance variables are negatively correlated with incidence. This indicates that the further away we are from fast food restaurants and gas stations, for example, the less number of heroin-overdose incidence in that area. The relationship is the strongest for crime incidence and weakest for population aged between 25-54. 
+
 
 ```{r cor for all predictors, fig.height=12, fig.width=8, message=FALSE, warning=FALSE}
 
@@ -929,6 +920,7 @@ heroin_net_long %>%
         panel.border = element_rect(colour = "grey", fill=NA, size=0.8))
 ```
 
+The figure below shows the difference in the number of hotspots or cold spots based on each of our predicting variable and we may see that there seems to be a significant difference in all scenarios. 
 
 ```{r anova figure, fig.height=10, fig.width=15, message=FALSE, warning=FALSE}
 
@@ -967,11 +959,7 @@ anova_dataset %>%
         panel.border = element_rect(colour = "grey", fill=NA, linewidth =0.8))
 ```
 
-
-
-We further conducted ANOVA test for all numeric features to see if there’s a significant difference in mean age, for example, across people who take and did not take the credit. 
-The result is in concur with our expectations: all numeric variables are significant predictors.
-
+We further conducted a series of ANOVA tests for all predictor variables to validate if there's a significant difference in mean number of crimes, for example, between cold spot and hot spot. The result is in concur with our expectations: all variables are significant predictors.
 
 ```{r anova test, message=FALSE, warning=FALSE}
 
@@ -1015,8 +1003,9 @@ anova_results %>%
 
 ```
 
-
 ## Simpile Logit
+
+Considering that all predictor variables used in the anova test appear to be significant, we included all of them in a kitchen-sink logistic regression. The model shows that in this scenario, **number of crimes**, **number of complaints**, **distance to hospital**, **distance to fast food restaurant**, **gender ratio**, and **distance to public parks** are highly significant predictors of heroin-overdose hotspot whereas other predictors become insignificant. 
 
 ```{r logistic without cv, warning=FALSE, message=FALSE}
 
@@ -1043,8 +1032,10 @@ coefficients_table %>%
   footnote(general_title = "\n")
 ```
 
-
 ## Logit with CV
+
+We would like to perform cross validation on this model to measures its overall performance and robustness. We decide to modify a cross validation function that was originally built on cases using Poission regression by making it suitable for use in our scenario (logistic regression). This function takes in four parameters: the dataset, a cross validation ID, which it could use to separate the dataset into training and testing, a list of dependent variables, and a independent variable. In our case, we use a randomly generated cvID associated with each grid cell for random k-fold cross validation. Each group of grids with the same cvID gets hold out during one iteration. 
+
 
 ```{r logit function}
 
@@ -1081,6 +1072,7 @@ logitCV <- function(dataset, id, dependentVariable, indVariables) {
 
 ```
 
+Here, another helper function is written to visualize the confusion matrix. 
 
 ```{r cm function}
 
@@ -1131,6 +1123,8 @@ draw_confusion_matrix <- function(cm) {
 }  
 ```
 
+The cross validation model is visualized below, from which we see that our model has a high accuracy rate of 0.936 and a moderate sensitivity rate of 0.727. Sensitivity is the true-positive rate, which is the proportion of actual hotspot grids that were correctly identified by the model. Given this model's high accuracy rate, this means that our model is missing out a few heorin-overdose hotspots. 
+However, note that in Cincinnati, the number of grids that are classified as hotspot is much smaller than the number of grids that are classified as coldspot. While this is a good news for Cincinnati, logistic regression can be sensitive to class imbalance, meaning that the model might be biased towards the majority class, leading to poor performance on the minority class. 
 
 ```{r logistic with CV, warning=FALSE, message=FALSE}
 
@@ -1158,9 +1152,12 @@ draw_confusion_matrix(cm_basic)
 
 # Principal Component Analysis (PCA)
 
+One of the reasons why each individual predictor variable is correlated with overdose hotspot but when combined in a regression, some of them become insignificant is because of multicollinearity. This commonly occurs in regression analysis when predictor variables are highly correlated. It won't be surprise to see that many of those demographic variables are highly correlated with each other. It is possible that distance to hospitals is correlated with distance to parks, given that there are more those kind of services in downtown areas. Srinivasan, et al. (2023)'s approach to this issue is to use Principal Component Analysis (PCA) as a preprocessing step before running the regression.  
+
+
 ## PC Identification
 
-PCA is a dimension reduction technique that is commonly used to reduce the number of variables used in analyses while preserving the information from them.
+PCA is a dimension reduction technique that is commonly used to reduce the number of variables used in analyses while preserving the information from them. The `prcomp` function below is used to identify the principal components among all 14 of our predictor variables. 
 
 ```{r determine pc, warning=FALSE, message=FALSE}
 
@@ -1174,7 +1171,7 @@ pc <- prcomp(pca_heroin,
             scale. = TRUE)
 ```
 
-The first approach of the list is the scree plot. It is used to visualize the importance of each principal component and can be used to determine the number of principal components to retain. 
+The scree plot is used to visualize the importance of each principal component and can be used to determine the number of principal components to retain. The y axis is eigenvalues, which essentially stand for the amount of variation. Here, we may see that the first six, or seven components are capturing the majority of variability. We can therefore, just use the first seven principal components and ignore the rest. 
 
 ```{r pca viz1, warning=FALSE, message=FALSE}
 
@@ -1182,10 +1179,7 @@ fviz_eig(pc, addlabels = TRUE, barfill = "#BB3754", barcolor = "transparent", xl
 
 ```
 
-The code above computed the square cosine value for each variable with respect to the first seven principal components. 
-
-From the illustration below, cereals, gender ratio.....are top four variables with the highest cos2, hence contributing the most to PC1 and PC2.
-
+The code above computed the square cosine value for each variable with respect to the first seven principal components. From the illustration below, gender ratio, population aged between 25-54, distance to parks, and poverty rate are top four variables with the highest cos2, hence contributing the most to the top seven principal components. 
 
 ```{r pca viz2,  message=FALSE, warning=FALSE}
 
@@ -1196,18 +1190,7 @@ fviz_cos2(pc, choice = "var", axes = 1:7) +
 
 ```
 
-
-With the biplot, it is possible to visualize the similarities and dissimilarities between the samples, and further shows the impact of each attribute on each of the principal components.
-
-The length of the arrow represents the magnitude or strength of the contribution of the corresponding variable to the specific principal component.
-The color of the arrow represents the relative contribution of the variable to the principal component. Darker colors typically indicate larger contributions.
-
-Long Arrow, Light Color:
-Interpretation: The length of the arrow indicates a strong contribution, but the lighter color suggests that the contribution might be less significant compared to other variables.
-
-Short Arrow, Dark Color:
-Interpretation: Despite the arrow being short, the dark color indicates that the variable has a relatively strong contribution compared to its length. It might not be a major driver, but its impact is notable.
-
+We also did a biplot based on our principal component analysis, which helps us to visualize the similarities and dissimilarities between the samples, and further understand the impact of each attribute on each of the principal components. Here, the length of the arrow represents the strength of the contribution of the corresponding variable to the specific principal component. The color of the arrow represents the relative contribution of the variable to the principal component. Darker colors typically indicate larger contributions. For variables with long arrow, but light color, such as percentage of population with a Bachelor's degree and percentage poverty, their contributions were less significant compared to other variables, and might only contribute significantly to one PC. For variables with short arrow but dark color, such as 311 complaints and crime, they have relatively strong contributions to all PC. Also, the direction of those arrows indicate that crimes and complaints have positive contributions to hotspots. 
 
 ```{r pca viz3, fig.height=6, fig.width=9, message=FALSE, warning=FALSE}
 
@@ -1217,7 +1200,7 @@ fviz_pca_var(pc, col.var = "cos2", repel = TRUE,
 
 ```
 
-
+Below, we computed the first seven principal components based on the loadings of each of our predictor variables in that component. 
 
 ```{r compute pca, message=FALSE, warning=FALSE}
 
@@ -1235,7 +1218,7 @@ pca_net <- heroin_net %>%
 
 ## PCA Logistic Regression
 
-We estimated logistic regressions with an autologistic term to predict if a grid was in a hotspot (0/1) as identified by the Getis-Ord Gi\* statistic as the outcome and the components derived from the PCA as the explanatory variables.
+Following Srinivasan, et al. (2023)'s method, now we can estimated this logistic regression to predict if a grid was in a hotspot (0/1) as identified by the Getis-Ord Gi\* statistic using components derived from the PCA as the explanatory variables. For this model using the principal components as predictors, we still get a accuracy rate of 0.928. Our sensitivity rate dropped a little bit to 0.66 compared to the kitchen sink model, probably because we addressed the issue of multicolinearity,  but that is still considered as a moderate sensitivity. 
 
 ```{r using pca in logistic regression, message=FALSE, warning=FALSE}
 
@@ -1258,6 +1241,8 @@ cm_pca <- caret::confusionMatrix(pca.logit.cv$hotspot, pca.logit.cv$PredictionCa
 draw_confusion_matrix(cm_pca)
 
 ```
+
+In addition to cross-validating using random cvID, we also tried the spatial ‘Leave-one-group-out’ cross-validation (LOGO-CV) approach, during which we hold out one neighborhood, train the model on the remaining n-1 areas, predict for the hold out, and record the goodness of fit. The result shows that our model has high accuracy, but the sensitivity further decreases. One possible explanation here is that different neighborhoods may have distinct characteristics or patterns. If the model is trained on a set of neighborhoods and then tested on a neighborhood with different characteristics, its performance may be negatively affected. Random cross-validation IDs might not capture these spatial variations as explicitly, but further investigation is required here. 
 
 ```{r using pca in logistic regression with neighborhood, message=FALSE, warning=FALSE}
 
@@ -1286,6 +1271,7 @@ cm_pca_neigh <- caret::confusionMatrix(pca.logit.cv.neigh$hotspot, pca.logit.cv.
 draw_confusion_matrix(cm_pca_neigh)
 ```
 
+We computed the Area Under the Receiver Operating Characteristic Curve (AUC-ROC) metric for our model to evaluate their performance. The AUC value ranges from 0 to 1, where 0.5 means a model with no discriminatory power (it performs as well as random chance), and 1 means a perfect model (it perfectly distinguishes between positive and negative cases). Generally, an AUC over 0.8 indicates a good performance of the model. For the random K-fold cross validation, we get a AUC score of 0.904 and for the Spatial LOGO-CV, we get a AUC score of 0.8628. Both are good scores and indicate that model is capturing important patterns in the data and making predictions better than random guessing.
 
 ```{r ROC curve, fig.height=6, fig.width=11, message=FALSE, warning=FALSE}
 
@@ -1318,7 +1304,11 @@ plot8 <- ggplot(pca.logit.cv.neigh, aes(d = as.numeric(hotspot), m = Prediction)
         panel.border = element_rect(colour = "grey", fill=NA, linewidth =0.8))
 
 plot7 + plot8
+
 ```
+
+
+
 
 ```{r mapping error, message=FALSE, warning=FALSE, fig.height=6, fig.width=11}
 
@@ -1407,6 +1397,11 @@ plot12 <- pca.logit.cv %>%
 
 plot9 + plot10 + plot11 + plot12
 ```
+
+
+If our model has generally been good at making prediction (high accuracy) but with some uncertainties in correctly locating the hotspot, then we would like to know where it is making mistakes. We mapped the error below and compared it to the actual hotspot. What we can see is that our model is accurate in roughly estimating the location of the hotspot, but tends to make mistakes when deciding which of these grids in particular should be categorized as hotspot. 
+
+We highlighted those grids which are actual hotspot but were wrongly predicted as problematic, from which we may see that those most of those problematic grids pretty much neighbors hotspot grids. This implies that when drawing conclusion from our model, we should not only look at specific hotspot grid, but also probably pay attention to grids nearby. 
 
 
 # KDE Validation
@@ -1562,16 +1557,9 @@ leaflet
 
 # References
 
-Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H.
-(2022).
-Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio.
+Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H. (2022). Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio.
 BMC public health, 22(1), 1-12.
 
-Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J.
-(2023).
-Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.
+Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J. (2023). Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.
 
-Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L.
-(2023).
-Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
-American Journal of Criminal Justice, 1-25.
+Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L. (2023). Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling. American Journal of Criminal Justice, 1-25.
