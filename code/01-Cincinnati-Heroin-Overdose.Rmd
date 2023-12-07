@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-Version 2.0 \| First Created Nov 17, 2023 \| Updated Dec 1, 2023
+Version 3.0 \| First Created Nov 17, 2023 \| Updated Dec 6, 2023
 
 Keywords: K Nearest Neighbors, Moran's I, Getis-Ord Gi\*, Kernel Density Estimation, Random K-fold Cross Validation, Logistic Regression, Poisson Regression, ROC Curve, Principal Component Analysis, Multi-Criteria Analysis, Health Geography
 
