@@ -1,5 +1,5 @@
 ---
-title: "Geospatial Risk Prediction of Opioid-Involved Overdose Hotspots in Cincinnati Ohio"
+title: "Geospatial Risk Prediction of Heroin Overdose Hotspots in Cincinnati Ohio"
 author: "Emily Zhou, EChin Li"
 date: "`r Sys.Date()`"
 output:
@@ -20,9 +20,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
-Version 3.0 \| First Created Nov 17, 2023 \| Updated Dec 6, 2023
+Version 3.0 \| First Created Nov 17, 2023 \| Updated Dec 8, 2023
 
 Keywords: K Nearest Neighbors, Moran's I, Getis-Ord Gi\*, Kernel Density Estimation, Random K-fold Cross Validation, Logistic Regression, Poisson Regression, ROC Curve, Principal Component Analysis, Multi-Criteria Analysis, Health Geography
+
+Important Links: [study repository](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin), [pitch presentation](https://youtu.be/LRWgTeHXNtk)
 
 # Introduction
 
@@ -35,7 +37,7 @@ Until recently, however, more and more studies have begun to consider the associ
 Contextual risk factors, especially features of the built environment, the presence of violent crime or crime associated with substance use, and neighborhood-level socioeconomic factors, have enabled more accurate identification of high-risk overdose areas, thus driving initiatives on alleviating overdose risk and crises.
 
 We conducted a case study on opioid-overdose risk modeling in Cincinnati, Ohio where the opioid epidemic has been a serious issue.
-Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hot spots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017.
+Since 2009, drug overdose deaths in Ohio have continued to increase, and Cincinnati, a large city in southwestern Ohio with a population of about 300,000 people, was one of 12 opioid hotspots in Ohio and had the highest per capita rates of a fatal overdose between 2010 and 2017.
 Today, heroin overdose incidences still remain high in the city since heroin and prescription drugs abuse have further led to other public health problems such as HIV and needle-borne diseases.
 
 We combined multiple data sources, including emergency medical service response, crime and non-emergency reports data, American Community Survey data, and datasets that are proxies for local built environment to analyze the distributions of heroin-related overdose incidents in Cincinnati, Ohio.
@@ -47,7 +49,8 @@ We constructed measures of the socio-built environment and neighborhood demograp
 The resulting measures were used as covariates in a logistic regression with random k-fold cross validation to predict if an area was part of an opioid hotspot cluster.
 All built environment risk factors were aggregated, scaled, and weighted to generate an interactive overdose risk terrain map.
 
-On the technical side, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as possible. On the practical side, we want our risk terrain model to benefit both the stakeholders and community members in the main form of a municipal dashboard and a mobile application by product. For stakeholders, the dashboard would serve as an early warning system by predicting/showing areas at high risk of opioid overdose. Specifically, it should include maps with overdose cluster locations, trend graphs over time, and charts illustrating the correlation between overdose rates and various factors. For community members, this application connects them to healthcare and rehabilitation resources within the city. Specifically, the application allow them to call for emergency services and medical assistance for themselves or for others at one tap. To encourage public-private partnership, this app would adopt the approach that OpenStreetMap took to allow both technical and non-technical users, private and public entities to update existing information, such as crime incidents, rehabilitation center capacities and location. We hope that non-technical stakeholders can use the app to allocate resources efficiently, directing outreach efforts, treatment facilities, and educational campaigns to areas with the highest predicted risk. We hope that the public would use this platform to foster community engagement and support for initiatives addressing the opioid crisis.
+**On the technical side**, the goal of our study is to build a model that could predict opioid overdose clusters as well as socioeconomic and built environment factors associated with opioid overdose rates in Cincinnati from 2016 to 2020 as much as possible. 
+**On the practical side**, we would like our risk terrain model to benefit both the stakeholders and community members in the main form of a municipal dashboard and a mobile application. For stakeholders, the dashboard would serve as an early warning system by predicting/showing areas at high risk of opioid overdose. Specifically, it should include maps with overdose cluster locations, trend graphs over time, and charts illustrating the correlation between overdose rates and various factors. For community members, this application connects them to healthcare and rehabilitation resources within the city. Specifically, the application allow them to call for emergency services and medical assistance for themselves or for others at one tap. To encourage public-private partnership, this app would adopt the approach that OpenStreetMap took to allow both technical and non-technical users, private and public entities to update existing information, such as crime incidents, rehabilitation center capacities and location. We hope that non-technical stakeholders can use the app to allocate resources efficiently, directing outreach efforts, treatment facilities, and educational campaigns to areas with the highest predicted risk. We hope that the public would use this platform to foster community engagement and support for initiatives addressing the opioid crisis.
 
 The rest of the report is organized as follows.
 Section one describes our approach to access and pre-process the data.
@@ -58,13 +61,13 @@ Section five applies principal component analysis to reduce colinerity and inclu
 Section six validates the accuracy of this model against a kernel density estimation while the last section constructs the risk terrain map.
 
 The conceptualization and methodologies of this study were drawn in part from: 
+
 - Choi, et al.(2022) Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio
 
 -  Srinivasan, et al. (2023) Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021 
 
 - Chichester, et al.(2023) Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling.
 
-The study data and code are available in public a GitHub repository linked [here](https://github.com/emilyzhou112/MUSA5080-Cincinnati-Heroin).
 
 ```{r library and setup, include=FALSE}
 
@@ -213,7 +216,7 @@ The ACS data also included socioeconomic characteristics of each census tract, s
 For each census tract, we computed the population aged between 25 and 54 (since this is the age group most vulnerable to opioid overdose), gender ratio, minority popultion ratio, percentage poverty, and percentage of population with a bachelor's degree.
 Note that the boundary of Cincinnati does not fully contain several census tracts and therefore we have tried our best to include tracts within Hamilton county that mostly fall within Cincinnati.
 
-```{r census data, warning=FALSE, message=FALSE, results='hide', cache=TRUE}
+```{r census data, warning=FALSE, message=FALSE, results='hide'}
 
 cincinnati20 <- get_acs(geography = "tract", 
           variables = c(
@@ -997,7 +1000,7 @@ anova_results %>%
 
 ```
 
-## Simpile Logit
+## Simple Logit
 
 Considering that all predictor variables used in the anova test appear to be significant, we included all of them in a kitchen-sink logistic regression. The model shows that in this scenario, **number of crimes**, **number of complaints**, **distance to hospital**, **distance to fast food restaurant**, **gender ratio**, and **distance to public parks** are highly significant predictors of heroin-overdose hotspot whereas other predictors become insignificant. 
 
@@ -1521,7 +1524,7 @@ risk_score <- risk_score %>%
 
 ```
 
-This below interactive leaflet map shows the risk score of each grid as well as the neighborhood that grid fall into. We hope that this will serve as our first step towards building up our use case that present stakeholders with a clearer picture of community vulnerability to heroin overdose and that help the public to have a better understanding of the severity of heroin-overdose in Cincinnati as well as existing rehabilitation resources.  
+This below interactive leaflet map shows the risk score of each grid, the neighborhood that grid fall into, and whether or not it falls into a hotspot that our model predicts. We hope that this will serve as our first step towards building up our use case that present stakeholders with a clearer picture of community vulnerability to heroin overdose and that help the public to have a better understanding of the severity of heroin-overdose in Cincinnati as well as existing rehabilitation resources.  
 
 ```{r map risk, message=FALSE, warning=FALSE}
 
@@ -1543,7 +1546,18 @@ leaflet <- risk_score %>%
   addPolygons(weight = 1,
               fillColor = ~pal(score), # change the name of the parameter in the bracket
               popup = labs,
+              color = "transparent",
+              group = "Risk Score", 
               fillOpacity = 1) %>%
+  addPolygons(
+    data = pca.logit.cv %>% filter(PredictionCat == 1) %>% st_transform("EPSG:4326"), 
+    weight = 2,
+    group = "Overdose Hotspot", 
+    color = "yellow") %>% 
+  addLayersControl(
+    overlayGroups = c("Risk Score", "Overdose Hotspot"),
+    options = layersControlOptions(collapsed = FALSE)
+  ) %>%
   addLegend(position = "bottomright",
             pal = pal,
             values = ~risk_score, # change the name of the parameter after ~
@@ -1551,7 +1565,7 @@ leaflet <- risk_score %>%
             opacity = 1) # change the name of the legend 
 
 leaflet
-
+mapshot(leaflet, url = "cincyrisk.html")
 ```
 
 
@@ -1562,18 +1576,23 @@ we used Getis-Ord hotspot analyses to identify locations of persistent risk in C
 
 Our model, which uses principal components as predictors, has an accuracy rate of 0.928, a sensitivity rate of 0.66, and an AUC score of 0.904, meaning that it has been effective overall in distinguishing between hotspots and cold spots. We mapped the error and compared that to the actual hotspot, from which we noticed that our model is accurate in roughly estimating the location of the hotspot but tends to make mistakes when deciding which of these grids in particular should be categorized as hotspot. On top of that, many of those grids are neighbors of hotspot grids that are correctly predicted.  
 
-Reflecting on the overall study design, we have the following concerns. Firstly, our study utilized a binary classification of hotspot and cold spot to describe risk. While this is a common approach in risk modeling, we should recognize the complexity within these categories as areas neighboring hotspots may also exhibit varying degrees of risk. Building onto that, another major issue is that our analysis has categorized “insignificant” grids into cold spots. In theory, cold spot should refer to places with a series of grids that have low heroin-incidence count whereas for insignificant grid, there might be a high number of incidences within specific grid. It’s just that those grids do not form clusters with surrounding grids. Merging insignificant grids into cold spot might risk overlooking heroin-incidence within those grids. 
+Reflecting on the overall study design, we have the following concerns, which we would like to continue working on to improve the accuracy and reliability of our model. Firstly, our study utilized a binary classification of hotspot and cold spot to describe risk. While this is a common approach in risk modeling, we should recognize the complexity within these categories as areas neighboring hotspots may also exhibit varying degrees of risk. Building onto that, another major issue is that our analysis has categorized "insignificant" grids into cold spots. In theory, cold spot should refer to places with a series of grids that have low heroin-incidence count whereas for insignificant grid, there might be a high number of incidences within specific grid. It’s just that those grids do not form clusters with surrounding grids. Merging insignificant grids into cold spot might risk overlooking heroin-incidence within those grids. 
 
 Secondly, within the discussion, we highlight the potential imbalance in logistic regression, prompting consideration for weighted logistic regression to address disparities in the prediction of positive and negative cases. Thirdly, during cross validation, we found that our model does not generalize well across neighborhoods. This highlights significant variations between different neighborhoods in Cincinnati, which requires further investigations. Fourthly, as we need to arrogate information into a standardized spatial unit that’s different from any existing spatial unit, we need to be aware of how our model might be sensitive to errors and uncertainties introduced by area-weighted re-aggregation and boundary/edge effect. 
 
-Regardless, the takeaways from this analysis will contribute to our understanding of the nuanced landscape of heroin-overdose crisis in Cincinnati and Provide important guidance on public health initiatives aiming to address heroin addiction. We look forward to seeing our risk terrain model being adapted in various scenarios that truly benefit both the stakeholders in managing community health and wellbeing as well as serve the needs of local residents. 
+Regardless, the takeaways from this analysis will contribute to our understanding of the nuanced landscape of heroin-overdose crisis in Cincinnati and provide important guidance on public health initiatives aiming to address heroin addiction. 
+
+We believe that our risk terrain model could effectively visualize heroin-overdose hotspots and could serve a good starting point for providing real-time update through calculating a risk score for each part of the city, allowing the government to conduct real-time data analysis to efficiently allocate EMS resources. We hope that our effort in bringing in data from a variety of sources would encourage data sharing between public and private sectors so that the government can manage public service and monitor its built environment. Reports can be collected from public parks, fast food restaurants, gas stations, places where most overdose incidence occurs. Having data from local hospitals and rehabilitation centers allows the government to see capacity information, thereby efficiently dispatching preparing and dispatching care so that the risk of heroin overdose is minimized before they happen. 
+
+We look forward to seeing our risk terrain model being adapted in various scenarios that truly benefit both the stakeholders in managing community health and well-being as well as serve the needs of local residents. 
 
 
 # References
 
-Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H. (2022). Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio.
-BMC public health, 22(1), 1-12.
+Choi, J. I., Lee, J., Yeh, A. B., Lan, Q., & Kang, H. (2022). Spatial clustering of heroin-related overdose incidents: a case study in Cincinnati, Ohio. BMC public health, 22(1), 1-12. [https://doi.org/10.1186/s12889-022-13557-3](https://doi.org/10.1186/s12889-022-13557-3)
 
-Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J. (2023). Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.
+Srinivasan, S., Pustz, J., Marsh, E., Young, L. D., & Stopka, T. J. (2023). Risk factors for persistent fatal opioid-involved overdose hotspots in Massachusetts 2011-2021: A spatial statistical analysis with socio-economic, access and prescription factors.[https://doi.org/10.21203/rs.3.rs-3249650/v1](https://doi.org/10.21203/rs.3.rs-3249650/v1)
 
-Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L. (2023). Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling. American Journal of Criminal Justice, 1-25.
+Chichester, K. R., Drawve, G., Sisson, M., Giménez-Santana, A., McCleskey, B., Goodin, B. R., ... & Cropsey, K. L. (2023). Crime and Features of the Built Environment Predicting Risk of Fatal Overdose: A Comparison of Rural and Urban Ohio Counties with Risk Terrain Modeling. American Journal of Criminal Justice, 1-25. [https://doi.org/10.1007/s12103-023-09739-3](https://doi.org/10.1007/s12103-023-09739-3)
+
+
